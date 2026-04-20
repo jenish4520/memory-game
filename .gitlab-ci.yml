@@ -20,7 +20,7 @@ build:
     - mvn clean package
   artifacts:
     paths:
-      - target/javafx-app-jar-with-dependencies.jar
+      - target/GameBox-jar-with-dependencies.jar
     reports:
       junit: target/surefire-reports/TEST-*.xml
     expire_in: 30 days
