@@ -1,0 +1,6 @@
+com\memorygame\network\GameMessageTest.class
+com\memorygame\model\CardTest.class
+com\memorygame\logic\GameLogicTest.class
+com\memorygame\network\NetworkIntegrationTest.class
+com\memorygame\model\GameConfigTest.class
+com\memorygame\model\GameStateTest.class
