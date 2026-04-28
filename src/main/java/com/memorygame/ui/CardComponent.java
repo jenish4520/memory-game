@@ -2,11 +2,14 @@ package com.memorygame.ui;
 
 import com.memorygame.model.Card;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.IntConsumer;
 
 /**
@@ -14,6 +17,23 @@ import java.util.function.IntConsumer;
  * Supports face-down, face-up, matched, and hover states with smooth visuals.
  */
 public class CardComponent extends JPanel {
+
+    private static final Map<String, Image> imageCache = new HashMap<>();
+
+    private static Image getImage(String name) {
+        if (name == null) return null;
+        return imageCache.computeIfAbsent(name, k -> {
+            try {
+                java.net.URL url = CardComponent.class.getResource("/images/" + k + ".png");
+                if (url != null) {
+                    return ImageIO.read(url);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        });
+    }
 
     // Card back colors
     private static final Color CARD_BACK_TOP = new Color(108, 52, 131);     // #6c3483
@@ -53,6 +73,11 @@ public class CardComponent extends JPanel {
     private boolean inCurrentAttempt;
     private final int index;
 
+    private boolean targetFaceUp = false;
+    private boolean isFaceUpVisual = false;
+    private double flipProgress = 1.0;
+    private Timer flipTimer;
+
     public CardComponent(int index, IntConsumer onClick) {
         this.index = index;
         this.hovered = false;
@@ -85,12 +110,36 @@ public class CardComponent extends JPanel {
     }
 
     public void updateCard(Card card, boolean inCurrentAttempt) {
+        boolean newFaceUp = (card != null) ? (card.isFaceUp() || card.isMatched()) : false;
+        
         this.card = card;
         this.inCurrentAttempt = inCurrentAttempt;
         setCursor(card != null && card.isClickable()
             ? new Cursor(Cursor.HAND_CURSOR)
             : new Cursor(Cursor.DEFAULT_CURSOR));
-        repaint();
+
+        if (newFaceUp != targetFaceUp) {
+            targetFaceUp = newFaceUp;
+            if (flipTimer != null && flipTimer.isRunning()) {
+                flipTimer.stop();
+            }
+            flipProgress = 0.0;
+            flipTimer = new Timer(15, e -> {
+                flipProgress += 0.08;
+                if (flipProgress >= 1.0) {
+                    flipProgress = 1.0;
+                    isFaceUpVisual = targetFaceUp;
+                    flipTimer.stop();
+                } else if (flipProgress >= 0.5) {
+                    isFaceUpVisual = targetFaceUp;
+                }
+                repaint();
+            });
+            flipTimer.start();
+        } else if (flipProgress >= 1.0) {
+            isFaceUpVisual = targetFaceUp;
+            repaint();
+        }
     }
 
     @Override
@@ -108,11 +157,21 @@ public class CardComponent extends JPanel {
         int y = 2;
         int arc = 14;
 
+        double scaleX = 1.0;
+        if (flipProgress < 1.0) {
+            scaleX = Math.abs(Math.cos(flipProgress * Math.PI));
+        }
+
+        double centerX = getWidth() / 2.0;
+        g2.translate(centerX, 0);
+        g2.scale(scaleX, 1.0);
+        g2.translate(-centerX, 0);
+
         RoundRectangle2D.Float cardShape = new RoundRectangle2D.Float(x, y, w, h, arc, arc);
 
-        if (card.isMatched()) {
+        if (card.isMatched() && isFaceUpVisual) {
             drawMatchedCard(g2, cardShape, x, y, w, h);
-        } else if (card.isFaceUp()) {
+        } else if (isFaceUpVisual) {
             drawFaceUpCard(g2, cardShape, x, y, w, h);
         } else {
             drawFaceDownCard(g2, cardShape, x, y, w, h);
@@ -143,14 +202,24 @@ public class CardComponent extends JPanel {
             }
         }
 
-        // Center question mark
-        g2.setColor(new Color(255, 255, 255, 120));
-        g2.setFont(new Font("SansSerif", Font.BOLD, 32));
-        FontMetrics fm = g2.getFontMetrics();
-        String text = "?";
-        int tx = x + (w - fm.stringWidth(text)) / 2;
-        int ty = y + (h + fm.getAscent() - fm.getDescent()) / 2;
-        g2.drawString(text, tx, ty);
+        // Center logo
+        Image logo = getImage("logo");
+        if (logo != null) {
+            int logoW = Math.min(w - 30, logo.getWidth(null));
+            int logoH = logo.getHeight(null) * logoW / Math.max(1, logo.getWidth(null));
+            int tx = x + (w - logoW) / 2;
+            int ty = y + (h - logoH) / 2;
+            g2.drawImage(logo, tx, ty, logoW, logoH, null);
+        } else {
+            // Fallback question mark
+            g2.setColor(new Color(255, 255, 255, 120));
+            g2.setFont(new Font("SansSerif", Font.BOLD, 32));
+            FontMetrics fm = g2.getFontMetrics();
+            String text = "?";
+            int tx = x + (w - fm.stringWidth(text)) / 2;
+            int ty = y + (h + fm.getAscent() - fm.getDescent()) / 2;
+            g2.drawString(text, tx, ty);
+        }
 
         // Border
         g2.setColor(new Color(80, 30, 100));
@@ -199,7 +268,11 @@ public class CardComponent extends JPanel {
         }
 
         // Border
-        g2.setColor(MATCHED_BORDER);
+        if (player == 2) {
+            g2.setColor(new Color(231, 76, 60)); // Red
+        } else {
+            g2.setColor(MATCHED_BORDER); // Green
+        }
         g2.setStroke(new BasicStroke(3f));
         g2.draw(shape);
     }
@@ -207,13 +280,34 @@ public class CardComponent extends JPanel {
     private void drawSymbol(Graphics2D g2, int x, int y, int w, int h) {
         if (card.getSymbol() == null) return;
 
-        Color symColor = SYMBOL_COLORS[Math.abs(card.getSymbol().hashCode()) % SYMBOL_COLORS.length];
-        g2.setColor(symColor);
-        g2.setFont(new Font("SansSerif", Font.BOLD, 40));
-        FontMetrics fm = g2.getFontMetrics();
-        String text = card.getSymbol();
-        int tx = x + (w - fm.stringWidth(text)) / 2;
-        int ty = y + (h + fm.getAscent() - fm.getDescent()) / 2;
-        g2.drawString(text, tx, ty);
+        Image img = getImage(card.getSymbol());
+        if (img != null) {
+            int imgW = w - 10;
+            int imgH = img.getHeight(null) * imgW / Math.max(1, img.getWidth(null));
+            if (imgH > h - 10) {
+                imgH = h - 10;
+                imgW = img.getWidth(null) * imgH / Math.max(1, img.getHeight(null));
+            }
+            int tx = x + (w - imgW) / 2;
+            int ty = y + (h - imgH) / 2;
+            g2.drawImage(img, tx, ty, imgW, imgH, null);
+        } else {
+            Color symColor = SYMBOL_COLORS[Math.abs(card.getSymbol().hashCode()) % SYMBOL_COLORS.length];
+            g2.setColor(symColor);
+            String text = card.getSymbol();
+            
+            int fontSize = 20;
+            g2.setFont(new Font("SansSerif", Font.BOLD, fontSize));
+            FontMetrics fm = g2.getFontMetrics();
+            while (fm.stringWidth(text) > w - 10 && fontSize > 8) {
+                fontSize--;
+                g2.setFont(new Font("SansSerif", Font.BOLD, fontSize));
+                fm = g2.getFontMetrics();
+            }
+
+            int tx = x + (w - fm.stringWidth(text)) / 2;
+            int ty = y + (h + fm.getAscent() - fm.getDescent()) / 2;
+            g2.drawString(text, tx, ty);
+        }
     }
 }

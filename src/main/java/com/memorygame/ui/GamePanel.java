@@ -199,7 +199,7 @@ public class GamePanel extends JPanel {
             }
             restartButton.setVisible(true);
         } else if (state.getPhase() == GamePhase.RESOLVING) {
-            turnLabel.setText("Resolving...");
+            turnLabel.setText("");
             turnLabel.setForeground(GOLD);
         } else {
             if (localMode) {

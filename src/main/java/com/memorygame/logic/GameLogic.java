@@ -13,15 +13,15 @@ import java.util.List;
 public class GameLogic {
 
     public static final String[] SYMBOL_POOL = {
-        "\uD83C\uDF4E", "\uD83C\uDF4A", "\uD83C\uDF47", "\uD83C\uDF49", // 🍎 🍊 🍇 🍉
-        "\uD83D\uDC36", "\uD83D\uDC31", "\uD83D\uDC2D", "\uD83D\uDC39", // 🐶 🐱 🐭 🐹
-        "\uD83C\uDF4C", "\uD83C\uDF4D", "\uD83C\uDF53", "\uD83C\uDF52", // 🍌 🍍 🍓 🍒
-        "\uD83D\uDC30", "\uD83D\uDC3A", "\uD83D\uDC3B", "\uD83D\uDC3C", // 🐰 🐺 🐻 🐼
-        "\uD83C\uDF51", "\uD83C\uDF50", "\uD83C\uDF4F", "\uD83E\uDD6D", // 🍑 🍐 🍏 🥭
-        "\uD83E\uDD81", "\uD83D\uDC2F", "\uD83D\uDC2E", "\uD83D\uDC37", // 🦁 🐯 🐮 🐷
-        "\uD83E\uDD5D", "\uD83C\uDF45", "\uD83E\uDD65", "\uD83E\uDD51", // 🥝 🍅 🥥 🥑
-        "\uD83D\uDC38", "\uD83D\uDC35", "\uD83D\uDC14", "\uD83D\uDC27", // 🐸 🐵 🐔 🐧
-        "\uD83D\uDC26", "\uD83D\uDC24", "\uD83D\uDC28", "\uD83E\uDD84"  // 🐦 🐤 🐨 🦄
+        "Pikachu", "Charizard", "Bulbasaur", "Squirtle",
+        "Jigglypuff", "Eevee", "Snorlax", "Mewtwo",
+        "Gengar", "Lucario", "Mew", "Togepi",
+        "Psyduck", "Meowth", "Machamp", "Alakazam",
+        "Gyarados", "Lapras", "Ditto", "Dragonite",
+        "Arcanine", "Vulpix", "Ninetales", "Umbreon",
+        "Espeon", "Sylveon", "Leafeon", "Glaceon",
+        "Jolteon", "Flareon", "Vaporeon", "Pichu",
+        "Raichu", "Charmander", "Charmeleon", "Ivysaur"
     };
 
     private List<Card> cards;

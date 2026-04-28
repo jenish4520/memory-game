@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.memorygame.logic.GameLogicTest" time="0.255" tests="32" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.memorygame.logic.GameLogicTest" time="0.214" tests="32" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="25"/>
     <property name="sun.cpu.isalist" value="amd64"/>
@@ -15,7 +15,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="IN"/>
     <property name="sun.boot.library.path" value="C:\Program Files\JetBrains\IntelliJ IDEA 2026.1.1\jbr\bin"/>
-    <property name="sun.java.command" value="C:\Users\admin\AppData\Local\Temp\surefire4430239083459310749\surefirebooter-20260426235758111_3.jar C:\Users\admin\AppData\Local\Temp\surefire4430239083459310749 2026-04-26T23-57-57_909-jvmRun1 surefire-20260426235758111_1tmp surefire_0-20260426235758111_2tmp"/>
+    <property name="sun.java.command" value="C:\Users\admin\AppData\Local\Temp\surefire1324172318980836391\surefirebooter-20260428163841407_3.jar C:\Users\admin\AppData\Local\Temp\surefire1324172318980836391 2026-04-28T16-38-41_230-jvmRun1 surefire-20260428163841407_1tmp surefire_0-20260428163841407_2tmp"/>
     <property name="jdk.debug" value="release"/>
     <property name="surefire.test.class.path" value="C:\Users\admin\.gemini\antigravity\scratch\memory-game\target\test-classes;C:\Users\admin\.gemini\antigravity\scratch\memory-game\target\classes;C:\Users\admin\.m2\repository\org\junit\jupiter\junit-jupiter\5.10.2\junit-jupiter-5.10.2.jar;C:\Users\admin\.m2\repository\org\junit\jupiter\junit-jupiter-api\5.10.2\junit-jupiter-api-5.10.2.jar;C:\Users\admin\.m2\repository\org\opentest4j\opentest4j\1.3.0\opentest4j-1.3.0.jar;C:\Users\admin\.m2\repository\org\junit\platform\junit-platform-commons\1.10.2\junit-platform-commons-1.10.2.jar;C:\Users\admin\.m2\repository\org\apiguardian\apiguardian-api\1.1.2\apiguardian-api-1.1.2.jar;C:\Users\admin\.m2\repository\org\junit\jupiter\junit-jupiter-params\5.10.2\junit-jupiter-params-5.10.2.jar;C:\Users\admin\.m2\repository\org\junit\jupiter\junit-jupiter-engine\5.10.2\junit-jupiter-engine-5.10.2.jar;C:\Users\admin\.m2\repository\org\junit\platform\junit-platform-engine\1.10.2\junit-platform-engine-1.10.2.jar;"/>
     <property name="sun.cpu.endian" value="little"/>
@@ -32,7 +32,7 @@
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="intellij.os.virtualization" value="none"/>
     <property name="jbr.virtualization.information" value="Hyper-V role"/>
-    <property name="surefire.real.class.path" value="C:\Users\admin\AppData\Local\Temp\surefire4430239083459310749\surefirebooter-20260426235758111_3.jar"/>
+    <property name="surefire.real.class.path" value="C:\Users\admin\AppData\Local\Temp\surefire1324172318980836391\surefirebooter-20260428163841407_3.jar"/>
     <property name="user.script" value=""/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="java.runtime.version" value="25.0.2+1-b329.117"/>
@@ -62,35 +62,35 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="69.0"/>
   </properties>
-  <testcase name="testInitializeGame_scoresStartAtZero" classname="com.memorygame.logic.GameLogicTest" time="0.04"/>
-  <testcase name="testMismatch_phaseBecomesResolving" classname="com.memorygame.logic.GameLogicTest" time="0.004"/>
-  <testcase name="testInitializeGame_eachSymbolAppearsExactlyNTimes(int, int)[1]" classname="com.memorygame.logic.GameLogicTest" time="0.035"/>
+  <testcase name="testInitializeGame_scoresStartAtZero" classname="com.memorygame.logic.GameLogicTest" time="0.03"/>
+  <testcase name="testMismatch_phaseBecomesResolving" classname="com.memorygame.logic.GameLogicTest" time="0.002"/>
+  <testcase name="testInitializeGame_eachSymbolAppearsExactlyNTimes(int, int)[1]" classname="com.memorygame.logic.GameLogicTest" time="0.039"/>
   <testcase name="testInitializeGame_eachSymbolAppearsExactlyNTimes(int, int)[2]" classname="com.memorygame.logic.GameLogicTest" time="0.002"/>
   <testcase name="testInitializeGame_eachSymbolAppearsExactlyNTimes(int, int)[3]" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
-  <testcase name="testInitializeGame_eachSymbolAppearsExactlyNTimes(int, int)[4]" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
-  <testcase name="testInitializeGame_eachSymbolAppearsExactlyNTimes(int, int)[5]" classname="com.memorygame.logic.GameLogicTest" time="0.002"/>
-  <testcase name="testRestart_resetsState" classname="com.memorygame.logic.GameLogicTest" time="0.004"/>
-  <testcase name="testInitializeGame_allCardsFaceDown" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
-  <testcase name="testRejectClickOnMatchedCard" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
-  <testcase name="testInitializeGame_cardsAreShuffled" classname="com.memorygame.logic.GameLogicTest" time="0.003"/>
-  <testcase name="testMatch_cardsMarkedMatched" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
+  <testcase name="testInitializeGame_eachSymbolAppearsExactlyNTimes(int, int)[4]" classname="com.memorygame.logic.GameLogicTest" time="0.002"/>
+  <testcase name="testInitializeGame_eachSymbolAppearsExactlyNTimes(int, int)[5]" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
+  <testcase name="testRestart_resetsState" classname="com.memorygame.logic.GameLogicTest" time="0.003"/>
+  <testcase name="testInitializeGame_allCardsFaceDown" classname="com.memorygame.logic.GameLogicTest" time="0.002"/>
+  <testcase name="testRejectClickOnMatchedCard" classname="com.memorygame.logic.GameLogicTest" time="0.002"/>
+  <testcase name="testInitializeGame_cardsAreShuffled" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
+  <testcase name="testMatch_cardsMarkedMatched" classname="com.memorygame.logic.GameLogicTest" time="0.002"/>
   <testcase name="testInitializeGame_phaseIsPlaying" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
   <testcase name="testNOfAKind_matchRequiresNCards(int, int)[1]" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
-  <testcase name="testNOfAKind_matchRequiresNCards(int, int)[2]" classname="com.memorygame.logic.GameLogicTest" time="0.0"/>
-  <testcase name="testNOfAKind_matchRequiresNCards(int, int)[3]" classname="com.memorygame.logic.GameLogicTest" time="0.002"/>
-  <testcase name="testInitializeGame_createsCorrectNumberOfCards" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
+  <testcase name="testNOfAKind_matchRequiresNCards(int, int)[2]" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
+  <testcase name="testNOfAKind_matchRequiresNCards(int, int)[3]" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
+  <testcase name="testInitializeGame_createsCorrectNumberOfCards" classname="com.memorygame.logic.GameLogicTest" time="0.0"/>
   <testcase name="testInitializeGame_player1StartsFirst" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
-  <testcase name="testMatch_playerKeepsTurn" classname="com.memorygame.logic.GameLogicTest" time="0.0"/>
+  <testcase name="testMatch_playerKeepsTurn" classname="com.memorygame.logic.GameLogicTest" time="0.002"/>
   <testcase name="testGameOver_winnerDetermined" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
-  <testcase name="testHandleCardClick_rejectFaceUpCard" classname="com.memorygame.logic.GameLogicTest" time="0.002"/>
-  <testcase name="testHandleCardClick_cardFlipsFaceUp" classname="com.memorygame.logic.GameLogicTest" time="0.0"/>
+  <testcase name="testHandleCardClick_rejectFaceUpCard" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
+  <testcase name="testHandleCardClick_cardFlipsFaceUp" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
   <testcase name="testResolveMismatch_turnSwitches" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
   <testcase name="testMismatch_cardsStayFaceUpDuringResolving" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
-  <testcase name="testResolveMismatch_cardsFlipBack" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
+  <testcase name="testResolveMismatch_cardsFlipBack" classname="com.memorygame.logic.GameLogicTest" time="0.0"/>
   <testcase name="testHandleCardClick_validClick" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
-  <testcase name="testHandleCardClick_rejectOutOfTurn" classname="com.memorygame.logic.GameLogicTest" time="0.002"/>
-  <testcase name="testHandleCardClick_rejectInvalidIndex" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
-  <testcase name="testMatch_scoreIncreases" classname="com.memorygame.logic.GameLogicTest" time="0.002"/>
+  <testcase name="testHandleCardClick_rejectOutOfTurn" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
+  <testcase name="testHandleCardClick_rejectInvalidIndex" classname="com.memorygame.logic.GameLogicTest" time="0.0"/>
+  <testcase name="testMatch_scoreIncreases" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
   <testcase name="testGameOver_whenAllCardsMatched" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
   <testcase name="testHandleCardClick_rejectDuringResolving" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
   <testcase name="testResolveMismatch_scoreUnchanged" classname="com.memorygame.logic.GameLogicTest" time="0.001"/>
