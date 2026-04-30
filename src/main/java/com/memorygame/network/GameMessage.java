@@ -2,97 +2,28 @@ package com.memorygame.network;
 
 import com.memorygame.model.GameConfig;
 import com.memorygame.model.GameState;
-
 import java.io.Serializable;
 
-/**
- * Serializable message exchanged between host and client over the network.
- * Uses a tagged-union style: only fields relevant to the message type are populated.
- */
 public class GameMessage implements Serializable {
-    private static final long serialVersionUID = 1L;
-
     private final MessageType type;
     private GameState gameState;
     private GameConfig config;
-    private int cardIndex;
-    private int playerNumber;
-    private String message;
-    private String playerName;  // used in JOIN_REQUEST (joining player's chosen name)
-    private String p1Name;      // used in GAME_START / RESTART_CONFIRMED
-    private String p2Name;      // used in GAME_START / RESTART_CONFIRMED
+    private int cardIndex = -1;
+    private int playerNumber = -1;
+    private String message, playerName, p1Name, p2Name;
 
-    public GameMessage(MessageType type) {
-        this.type = type;
-        this.cardIndex = -1;
-        this.playerNumber = -1;
-    }
+    public GameMessage(MessageType type) { this.type = type; }
 
-    // --- Factory methods for common messages ---
-
-    public static GameMessage joinRequest(String playerName) {
-        GameMessage msg = new GameMessage(MessageType.JOIN_REQUEST);
-        msg.playerName = (playerName == null || playerName.isBlank()) ? "Player 2" : playerName;
-        return msg;
-    }
-
-    public static GameMessage joinAccepted(int playerNumber) {
-        GameMessage msg = new GameMessage(MessageType.JOIN_ACCEPTED);
-        msg.playerNumber = playerNumber;
-        return msg;
-    }
-
-    public static GameMessage gameStart(GameState state, GameConfig config, String p1Name, String p2Name) {
-        GameMessage msg = new GameMessage(MessageType.GAME_START);
-        msg.gameState = state;
-        msg.config = config;
-        msg.p1Name = p1Name;
-        msg.p2Name = p2Name;
-        return msg;
-    }
-
-    public static GameMessage cardClick(int cardIndex) {
-        GameMessage msg = new GameMessage(MessageType.CARD_CLICK);
-        msg.cardIndex = cardIndex;
-        return msg;
-    }
-
-    public static GameMessage stateUpdate(GameState state) {
-        GameMessage msg = new GameMessage(MessageType.STATE_UPDATE);
-        msg.gameState = state;
-        return msg;
-    }
-
-    public static GameMessage gameEnd(GameState state) {
-        GameMessage msg = new GameMessage(MessageType.GAME_END);
-        msg.gameState = state;
-        return msg;
-    }
-
-    public static GameMessage restartRequest() {
-        return new GameMessage(MessageType.RESTART_REQUEST);
-    }
-
-    public static GameMessage restartConfirmed(GameState state, GameConfig config, String p1Name, String p2Name) {
-        GameMessage msg = new GameMessage(MessageType.RESTART_CONFIRMED);
-        msg.gameState = state;
-        msg.config = config;
-        msg.p1Name = p1Name;
-        msg.p2Name = p2Name;
-        return msg;
-    }
-
-    public static GameMessage error(String errorMessage) {
-        GameMessage msg = new GameMessage(MessageType.ERROR);
-        msg.message = errorMessage;
-        return msg;
-    }
-
-    public static GameMessage heartbeat() {
-        return new GameMessage(MessageType.HEARTBEAT);
-    }
-
-    // --- Getters ---
+    public static GameMessage joinRequest(String name) { GameMessage m = new GameMessage(MessageType.JOIN_REQUEST); m.playerName = (name == null || name.isBlank()) ? "Player 2" : name; return m; }
+    public static GameMessage joinAccepted(int num) { GameMessage m = new GameMessage(MessageType.JOIN_ACCEPTED); m.playerNumber = num; return m; }
+    public static GameMessage gameStart(GameState s, GameConfig c, String p1, String p2) { GameMessage m = new GameMessage(MessageType.GAME_START); m.gameState = s; m.config = c; m.p1Name = p1; m.p2Name = p2; return m; }
+    public static GameMessage cardClick(int idx) { GameMessage m = new GameMessage(MessageType.CARD_CLICK); m.cardIndex = idx; return m; }
+    public static GameMessage stateUpdate(GameState s) { GameMessage m = new GameMessage(MessageType.STATE_UPDATE); m.gameState = s; return m; }
+    public static GameMessage gameEnd(GameState s) { GameMessage m = new GameMessage(MessageType.GAME_END); m.gameState = s; return m; }
+    public static GameMessage restartRequest() { return new GameMessage(MessageType.RESTART_REQUEST); }
+    public static GameMessage restartConfirmed(GameState s, GameConfig c, String p1, String p2) { GameMessage m = new GameMessage(MessageType.RESTART_CONFIRMED); m.gameState = s; m.config = c; m.p1Name = p1; m.p2Name = p2; return m; }
+    public static GameMessage error(String err) { GameMessage m = new GameMessage(MessageType.ERROR); m.message = err; return m; }
+    public static GameMessage heartbeat() { return new GameMessage(MessageType.HEARTBEAT); }
 
     public MessageType getType() { return type; }
     public GameState getGameState() { return gameState; }
@@ -103,14 +34,4 @@ public class GameMessage implements Serializable {
     public String getPlayerName() { return playerName; }
     public String getP1Name() { return p1Name; }
     public String getP2Name() { return p2Name; }
-
-    @Override
-    public String toString() {
-        return "GameMessage{type=" + type +
-               (gameState != null ? ", state=" + gameState : "") +
-               (cardIndex >= 0 ? ", cardIndex=" + cardIndex : "") +
-               (playerNumber >= 0 ? ", player=" + playerNumber : "") +
-               (message != null ? ", msg='" + message + "'" : "") +
-               "}";
-    }
 }

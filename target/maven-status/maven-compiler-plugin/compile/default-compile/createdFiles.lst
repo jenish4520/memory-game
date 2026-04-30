@@ -9,6 +9,7 @@ com\memorygame\ui\GameWindow.class
 com\memorygame\model\Card.class
 com\memorygame\ui\MenuPanel.class
 com\memorygame\network\MessageType.class
+module-info.class
 com\memorygame\ui\CardComponent.class
 com\memorygame\ui\GameWindow$1.class
 com\memorygame\model\GameConfig.class

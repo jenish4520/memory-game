@@ -56,6 +56,16 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
             </plugin>
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>com.memorygame/com.memorygame.Main</mainClass>
+                    <launcher>memory-game</launcher>
+                    <jlinkExecutable>${user.home}/.jdks/openjdk-26.0.1/bin/jlink.exe</jlinkExecutable>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

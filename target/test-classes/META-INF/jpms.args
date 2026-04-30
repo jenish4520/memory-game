@@ -1,0 +1,4 @@
+--patch-module
+com.memorygame=_
+--add-reads
+com.memorygame=ALL-UNNAMED
