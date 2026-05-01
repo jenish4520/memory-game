@@ -1,15 +1,20 @@
 package seda_project.control_alt_defeat.gamebox;
 
 import javafx.application.Application;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javafx.stage.Stage;
 
-public class Launcher {
 
-    private static final Logger logger = LoggerFactory.getLogger(Launcher.class);
+// Entry point.
+public class Launcher extends Application {
 
-    static void main(String[] args) {
-        logger.debug("Starting application");
-        Application.launch(GameBox.class, args);
+    @Override
+    public void start(Stage primaryStage) {
+        GameBox window = new GameBox(primaryStage); // Start GameBox
+        window.show();
+    }
+
+    // Launch app.
+    public static void Launcher(String[] args) {
+        launch(args);
     }
 }

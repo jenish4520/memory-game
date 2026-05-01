@@ -1,66 +1,63 @@
-# SEDA Project Template
+# Task 1 : Memory Game Application (Retro Game Compilation SuSe2026 SEDA Project)
+# Team: Loop Never Ends
 
-This repository is a starter template for the SEDA bachelor/master project.
-It provides a working JavaFX + Maven setup, including:
-- a runnable JavaFX app skeleton with FXML
-- unit test support with JUnit
-- an example requirements document in LaTeX under `docs/`
-- a gitlab CI pipeline that automatically builds and tests the project on push
 
-## Prerequisites
+# According to the customer specification requirement , we build a  two-player Memory Game with configurable n-of-a-kind matching, which can also be played over a local area network (LAN) using a host-client architecture.
 
-- Java 25+
-- Maven 3.9+
-- A LaTeX distribution with `pdflatex` available on your `PATH` (e.g., **miktex** or **texlive**)
-- Optional: gitlab-ci-local (Requires docker)
+## Features Requirements
 
-## IntelliJ Setup (Recommended)
-This template works with any IDE or platform, but we recommend IntelliJ.
-The ultimate version is free for students, but the community edition also works fine.
-IntelliJ makes debugging, building and testing straightforward and integrates well with Maven and JavaFX.
+- **Configurable match size** that is `n` (2 ≤ n ≤ 6) with match groups of 2, 3, 4, 5, or 6 identical cards
+- **Configurable deck size** (4–36 cards, deck size must be divisible by n).
+- **2-player LAN multiplayer** —> using the host-client model over TCP/IP on same network.
+- **Full synchronization** —> the game state, scores, turns, and lifecycle events.
+- **JavaFX UI** —> Pokemon theme with custom pokemon cards, hover effects, match indicators to make user friendly and exciting.
+- **Restart support** —> both players can start a new round without reconnecting.
 
-IntelliJ can be downloaded [from their website](https://www.jetbrains.com/idea/download/) 
-or using the [JetBrains Toolbox](https://www.jetbrains.com/toolbox-app/) or with package managers like `winget` or `snap`.
-Visit the [installation guide](https://www.jetbrains.com/help/idea/installation-guide.html) for additional information.
+## Requirements
 
-You can do most setup directly in IntelliJ:
-- **Maven is bundled with IntelliJ**, so you do not need to install Maven manually.
-- **Java can be downloaded via IntelliJ** (`Ctrl+Alt+Shift+S > SDKs > + > Download JDK`).
-  This avoids changing your global `PATH` on your machine.
+- **Java 21** or newer
+- **Apache Maven 3.8+, JavaFX**
+- Both players on the same **IPv4 Local Area Network**
 
-### Recommended IntelliJ Plugins
-For this template, we recommend:
-- **Maven** (usually enabled by default)
-- **JUnit** (usually enabled by default)
-- **JavaFX** 
-- **[TeXiFy-IDEA](https://plugins.jetbrains.com/plugin/9473-texify-idea)** 
+## Build
 
-Install plugins from `Ctrl+Alt+S > Plugins`.
-
-### Build the Project
-
-Run from the repository root:
-
-```sh
-mvn package
-```
-
-This compiles the project, runs tests, and creates artifacts in `target/`.
-
-### Build the Docs
-
-The template includes a `docs` Maven profile that compiles `docs/requirements_example.tex` to PDF.
-
-```sh
-mvn generate-resources -P docs
-```
-
-Generated PDF output is copied to `target/docs/`
-
-### Run the Project
-
-Use the JavaFX Maven plugin:
-
-```sh
+In bash
+cd memory-game
+mvn clean javafx:jlink
 mvn javafx:run
-```
+
+
+## How to Play Instructions
+
+### 1. Host a Game (Player 1)
+
+1. Launch the application.
+2. In the **HOST A GAME** section:-
+   - A Player can choose **Match Size (n)**, that is how many cards must match (by default: 2).
+   -A Player can set **Deck Size**, that is total number of cards (deck size be divisible by n).
+3. Click **Start Hosting**
+4. The IP address of the host is displayed in the User Interface.
+5. Player 2 will join the game by entering the *IP address* and *port number* and the game starts.
+
+### 2. Join a Game (Player 2)
+
+1. Another player will launch the application on a second computer over the **same network**.
+2. In the **JOIN A GAME** section:
+   - Player will enter the **Host IP** address.
+   - The the player will enter the **Port** (must match the host's port!).
+3. Click **Connect** and the game panel will appear where you can start the game!.
+
+### 3. Gameplay Flow
+
+- Player 1 goes first.
+- On the player's turn, player clicks **n** face-down cards to reveal them (for example 2 cards, then click 2 consecutive cards).
+- If all n cards match:
+  - Player 1 scores **+1 point**.
+  - Player 1 **keeps his turn**.
+- If the cards don't match:
+  - Cards flip back after the turn.
+  - The turn passes to the other player 2.
+- The game session will end when **all cards are matched**.
+- The player with the higher score **wins**, or **draw** if the scores are equal
+
+- Click **New Game** to restart with the same settings.

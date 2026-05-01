@@ -1,9 +1,8 @@
-module seda.project.control.alt.defeat.gamebox {
+module seda_project.control_alt_defeat {
     requires javafx.controls;
     requires javafx.fxml;
-    requires org.slf4j;
-    requires ch.qos.logback.classic;
+    requires java.logging;
 
-    opens seda_project.control_alt_defeat.gamebox to javafx.fxml;
-    exports seda_project.control_alt_defeat.gamebox to javafx.graphics;
+    exports seda_project.control_alt_defeat.gamebox;
+    opens seda_project.control_alt_defeat.gamebox to javafx.graphics, javafx.fxml;
 }
