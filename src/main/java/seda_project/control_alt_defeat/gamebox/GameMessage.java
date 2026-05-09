@@ -1,7 +1,5 @@
 package seda_project.control_alt_defeat.gamebox;
 
-
-
 import java.io.Serializable;
 
 public class GameMessage implements Serializable {
