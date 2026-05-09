@@ -24,17 +24,17 @@ class GameConfigTest {
 
     @Test
     void testMatchSizeTooSmall() {
-        assertThrows(IllegalArgumentException.class, () -> new GameConfig(1, 10));
+        assertThrows(IllegalArgumentException.class, () -> new GameConfig(0, 10));
     }
 
     @Test
     void testMatchSizeTooLarge() {
-        assertThrows(IllegalArgumentException.class, () -> new GameConfig(7, 14));
+        assertThrows(IllegalArgumentException.class, () -> new GameConfig(46, 46));
     }
 
     @Test
     void testDeckSizeTooSmall() {
-        assertThrows(IllegalArgumentException.class, () -> new GameConfig(2, 2));
+        assertThrows(IllegalArgumentException.class, () -> new GameConfig(2, 0));
     }
 
     @Test

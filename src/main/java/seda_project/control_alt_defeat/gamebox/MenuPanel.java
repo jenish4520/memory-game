@@ -205,13 +205,13 @@ public class MenuPanel extends StackPane {
         Button plusBtn = makeRoundButton("+", ACCENT_CYAN);
 
         minusBtn.setOnAction(e -> {
-            if (matchSize > 2) {
+            if (matchSize > 1) {
                 matchSize--;
                 updateConfigUI();
             }
         });
         plusBtn.setOnAction(e -> {
-            if (matchSize < 6) {
+            if (matchSize < 45) {
                 matchSize++;
                 updateConfigUI();
             }
@@ -277,37 +277,55 @@ public class MenuPanel extends StackPane {
         String[] labels = { "Small", "Medium", "Large" };
 
         for (int i = 0; i < 3; i++) {
-            suggestionButtons[i].setText(sizes[i] + " cards\n" + labels[i]);
-            styleUnselected(suggestionButtons[i]);
+            if (i < sizes.length) {
+                suggestionButtons[i].setText(sizes[i] + " cards\n" + labels[i]);
+                suggestionButtons[i].setVisible(true);
+                suggestionButtons[i].setManaged(true);
+                styleUnselected(suggestionButtons[i]);
+            } else {
+                suggestionButtons[i].setVisible(false);
+                suggestionButtons[i].setManaged(false);
+            }
         }
 
-        selectedDeckSize = sizes[1];
-        styleSelected(suggestionButtons[1]);
+        if (sizes.length > 0) {
+            int defaultIdx = Math.min(1, sizes.length - 1);
+            selectedDeckSize = sizes[defaultIdx];
+            styleSelected(suggestionButtons[defaultIdx]);
+        } else {
+            selectedDeckSize = -1;
+        }
         deckErrorLabel.setText(" ");
         customDeckField.setText("");
     }
 
     private int[] getSuggestedDeckSizes(int n) {
-        int small = (int) (Math.ceil(12.0 / n) * n);
-        if (small < n * 2)
-            small = n * 2;
-        int medium = (int) (Math.ceil(20.0 / n) * n);
-        int large = (int) Math.min(45, Math.ceil(30.0 / n) * n);
-
-        if (medium == small)
-            medium = small + n;
-        if (large == medium)
-            large = medium + n;
-        if (large > 45)
-            large = (45 / n) * n;
-
-        return new int[] { small, medium, large };
+        java.util.List<Integer> validSizes = new java.util.ArrayList<>();
+        
+        int small = n * Math.max(1, (int)Math.ceil(12.0 / n));
+        if (small <= 45) validSizes.add(small);
+        
+        int medium = n * Math.max(2, (int)Math.ceil(20.0 / n));
+        if (medium <= small) medium = small + n;
+        if (medium <= 45) validSizes.add(medium);
+        
+        int large = n * Math.max(3, (int)Math.ceil(30.0 / n));
+        if (large <= medium) large = medium + n;
+        if (large <= 45) validSizes.add(large);
+        
+        if (validSizes.isEmpty()) {
+            int maxMult = 45 / n;
+            if (maxMult > 0) validSizes.add(n * maxMult);
+        }
+        
+        return validSizes.stream().mapToInt(Integer::intValue).toArray();
     }
 
     private void selectSuggestion(int idx) {
         int[] sizes = getSuggestedDeckSizes(matchSize);
+        if (idx >= sizes.length) return;
         selectedDeckSize = sizes[idx];
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < sizes.length; i++) {
             if (i == idx)
                 styleSelected(suggestionButtons[i]);
             else
@@ -323,10 +341,25 @@ public class MenuPanel extends StackPane {
             return;
         try {
             int size = Integer.parseInt(text);
+            if (size < GameConfig.MIN_DECK_SIZE || size > GameConfig.MAX_DECK_SIZE) {
+                GameConfig.validate(matchSize, size);
+            }
             if (size % matchSize != 0) {
                 int lower = (size / matchSize) * matchSize;
                 int upper = lower + matchSize;
-                deckErrorLabel.setText("Must be divisible by " + matchSize + ". Try " + lower + " or " + upper);
+                
+                String tryMsg = "Try ";
+                if (lower >= GameConfig.MIN_DECK_SIZE && upper <= GameConfig.MAX_DECK_SIZE) {
+                    tryMsg += lower + " or " + upper;
+                } else if (lower >= GameConfig.MIN_DECK_SIZE) {
+                    tryMsg += lower;
+                } else if (upper <= GameConfig.MAX_DECK_SIZE) {
+                    tryMsg += upper;
+                } else {
+                    tryMsg = "No valid sizes";
+                }
+                
+                deckErrorLabel.setText("Must be divisible by " + matchSize + ". " + tryMsg);
                 selectedDeckSize = -1;
                 return;
             }

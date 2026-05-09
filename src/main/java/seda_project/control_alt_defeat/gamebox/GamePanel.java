@@ -146,7 +146,7 @@ public class GamePanel extends BorderPane {
         HBox centerBox = new HBox(statusLabel);
         centerBox.setAlignment(Pos.CENTER);
 
-        restartButton = new Button("New Game");
+        restartButton = new Button("Restart");
         restartButton.setFont(Font.font("SansSerif", FontWeight.BOLD, 14));
         restartButton.setStyle("-fx-background-color: " + toHexString(SUCCESS_GREEN) + "; -fx-text-fill: white;");
         restartButton.setCursor(Cursor.HAND);
