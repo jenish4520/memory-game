@@ -1,16 +1,13 @@
 # Task 1 : Memory Game Application (Retro Game Compilation SuSe2026 SEDA Project)
 # Team: Loop Never Ends
 
-
-# According to the customer specification requirement , we build a  two-player Memory Game with configurable n-of-a-kind matching, which can also be played over a local area network (LAN) using a host-client architecture.
-
 ## Features Requirements
 
-- **Configurable match size** that is `n` (2 ≤ n ≤ 6) with match groups of 2, 3, 4, 5, or 6 identical cards
-- **Configurable deck size** (4–36 cards, deck size must be divisible by n).
+- **Configurable match size** that is `n` (1 ≤ n ≤ 45) with match groups of n cards of same kind.
+- **Configurable deck size** (deck size must be divisible by n).
 - **2-player LAN multiplayer** —> using the host-client model over TCP/IP on same network.
 - **Full synchronization** —> the game state, scores, turns, and lifecycle events.
-- **JavaFX UI** —> Pokemon theme with custom pokemon cards, hover effects, match indicators to make user friendly and exciting.
+- **JavaFX UI** —> Pokemon theme with custom pokemon cards, hover effects
 - **Restart support** —> both players can start a new round without reconnecting.
 
 ## Requirements

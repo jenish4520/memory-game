@@ -1,13 +1,5 @@
 package seda_project.control_alt_defeat.gamebox;
 
-
-
-
-
-
-
-
-
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.scene.Scene;

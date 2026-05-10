@@ -1,10 +1,5 @@
 package seda_project.control_alt_defeat.gamebox;
 
-
-
-
-
-
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
