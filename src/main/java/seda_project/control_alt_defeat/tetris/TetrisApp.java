@@ -172,19 +172,19 @@ public class TetrisApp {
         Label status = new Label("Waiting to start...");
         status.setTextFill(Color.GRAY);
         
-        Button startBtn = new Button("Start Hosting (Port 8080)");
+        Button startBtn = new Button("Start Hosting (Port 28080)");
         styleButton(startBtn);
         startBtn.setOnAction(e -> {
             closeNetwork(); // Ensure old sessions are killed
             startBtn.setDisable(true);
-            status.setText("Hosting on Port 8080... Waiting for Player 2.");
+            status.setText("Hosting on Port 28080... Waiting for Player 2.");
             
             GameLogic logic = new GameLogic(p1Field.getText(), "Player 2");
             TetrisHost host = new TetrisHost(msg -> {
                 if (msg instanceof TetrisMessage) {
                     TetrisMessage tm = (TetrisMessage) msg;
                     if (tm.type == TetrisMessage.Type.PLAYER_NAME && tm.playerName != null) {
-                        logic.p2.name = tm.playerName;  // update to the client's chosen name
+                        logic.p2.name = tm.playerName;
                     } else if (tm.type == TetrisMessage.Type.INPUT_LEFT)       logic.moveLeft(logic.p2);
                     else if (tm.type == TetrisMessage.Type.INPUT_RIGHT)         logic.moveRight(logic.p2);
                     else if (tm.type == TetrisMessage.Type.INPUT_SOFT_DROP)     logic.softDrop(logic.p2);
@@ -200,7 +200,7 @@ public class TetrisApp {
             
             new Thread(() -> {
                 try {
-                    host.start(8080, p1Field.getText());
+                    host.start(28080, p1Field.getText());
                     Platform.runLater(() -> {
                         boolean[] broadcastRunning = { true };
                         TetrisPanel[] panelRef = { null };
@@ -249,7 +249,6 @@ public class TetrisApp {
         
         Button backBtn = new Button("Back");
         styleButton(backBtn);
-        // Bug fix #1: close the host (stops UDP responder) when navigating back
         backBtn.setOnAction(e -> { closeNetwork(); show(); });
         
         root.getChildren().addAll(title, p1Label, p1Field, startBtn, status, backBtn);
@@ -290,7 +289,7 @@ public class TetrisApp {
                     udpSocket.setSoTimeout(1000);
                     
                     byte[] reqData = "TETRIS_DISCOVER".getBytes();
-                    DatagramPacket reqPacket = new DatagramPacket(reqData, reqData.length, InetAddress.getByName("255.255.255.255"), 8081);
+                    DatagramPacket reqPacket = new DatagramPacket(reqData, reqData.length, InetAddress.getByName("255.255.255.255"), 28081);
                     udpSocket.send(reqPacket);
                     
                     byte[] buf = new byte[256];
@@ -343,7 +342,7 @@ public class TetrisApp {
             
             new Thread(() -> {
                 try {
-                    client.connect(ipField.getText(), 8080);
+                    client.connect(ipField.getText(), 28080);
                     // Send chosen name immediately so host can update P2's display name
                     TetrisMessage nameMsg = new TetrisMessage(TetrisMessage.Type.PLAYER_NAME);
                     nameMsg.playerName = p2Field.getText();

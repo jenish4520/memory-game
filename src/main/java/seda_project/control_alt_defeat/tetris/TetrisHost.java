@@ -28,7 +28,7 @@ public class TetrisHost {
         // session closes, preventing "address already in use" on repeated hosting.
         udpSocket = new DatagramSocket(null);
         udpSocket.setReuseAddress(true);
-        udpSocket.bind(new java.net.InetSocketAddress(8081));
+        udpSocket.bind(new java.net.InetSocketAddress(28081));
 
         Thread udpThread = new Thread(() -> {
             try {
