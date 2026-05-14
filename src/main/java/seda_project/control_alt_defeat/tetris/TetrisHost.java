@@ -24,7 +24,12 @@ public class TetrisHost {
     }
 
     public void start(int port, String hostName) throws Exception {
-        udpSocket = new DatagramSocket(8081);
+        // SO_REUSEADDR lets the OS immediately reuse the port after the previous
+        // session closes, preventing "address already in use" on repeated hosting.
+        udpSocket = new DatagramSocket(null);
+        udpSocket.setReuseAddress(true);
+        udpSocket.bind(new java.net.InetSocketAddress(8081));
+
         Thread udpThread = new Thread(() -> {
             try {
                 byte[] buf = new byte[256];
@@ -45,7 +50,9 @@ public class TetrisHost {
         udpThread.setDaemon(true);
         udpThread.start();
 
-        serverSocket = new ServerSocket(port);
+        serverSocket = new ServerSocket();
+        serverSocket.setReuseAddress(true);
+        serverSocket.bind(new java.net.InetSocketAddress(port));
         clientSocket = serverSocket.accept();
         // Client connected — stop advertising so stale hosts never appear
         if (udpSocket != null && !udpSocket.isClosed()) udpSocket.close();
