@@ -35,15 +35,18 @@ public class GameBox {
     private String player1Name = "Player 1";
     private String player2Name = "Player 2";
 
+    private GameHub hub;
     private PauseTransition mismatchTimer;
 
-    public GameBox(Stage stage) {
+    public GameBox(Stage stage, GameHub hub) {
         this.stage = stage;
+        this.hub = hub;
         stage.setTitle("Memory Game - LAN Multiplayer");
-        stage.setWidth(1100);
-        stage.setHeight(750);
+        stage.setWidth(900);
+        stage.setHeight(650);
         stage.setMinWidth(900);
         stage.setMinHeight(650);
+        stage.centerOnScreen();
 
         stage.setOnCloseRequest(e -> cleanup());
 
@@ -59,9 +62,10 @@ public class GameBox {
         menuPanel = new MenuPanel(
                 this::startLocalGame,
                 this::startHosting,
-                this::startJoining);
+                this::startJoining,
+                () -> hub.show());
         menuPanel.setBackground(new Background(new BackgroundFill(BG_COLOR, null, null)));
-        Scene scene = new Scene(menuPanel, 1100, 750);
+        Scene scene = new Scene(menuPanel, 900, 650);
         stage.setScene(scene);
     }
 
@@ -75,7 +79,7 @@ public class GameBox {
                 this::onRestartRequested,
                 this::onBackToMenu);
         gamePanel.setBackground(new Background(new BackgroundFill(BG_COLOR, null, null)));
-        Scene scene = new Scene(gamePanel, 1100, 750);
+        Scene scene = new Scene(gamePanel, 900, 650);
         stage.setScene(scene);
     }
 

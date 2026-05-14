@@ -1,0 +1,340 @@
+package seda_project.control_alt_defeat.tetris;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Cursor;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.stage.Stage;
+import seda_project.control_alt_defeat.gamebox.GameHub;
+import javafx.application.Platform;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+
+public class TetrisApp {
+
+    private Stage stage;
+    private GameHub hub;
+
+    private static final Color CARD_BG = Color.web("#1e2341");
+    private static final Color CARD_HOVER = Color.web("#282d50");
+    private static final Color ACCENT_PURPLE = Color.web("#a882ff");
+    private static final Color ACCENT_CYAN = Color.web("#00d2ff");
+    private static final Color ACCENT_PINK = Color.web("#ff6b9d");
+    private static final Color TEXT_DIM = Color.web("#8c8caa");
+
+    public TetrisApp(Stage stage, GameHub hub) {
+        this.stage = stage;
+        this.hub = hub;
+    }
+
+    public void show() {
+        VBox root = new VBox(10);
+        root.setAlignment(Pos.CENTER);
+        root.setStyle("-fx-background-color: #0f0f1e;");
+
+        Label title = new Label("TETRIS");
+        title.setFont(Font.font("SansSerif", FontWeight.BOLD, 52));
+        title.setTextFill(ACCENT_PURPLE);
+
+        Label subtitle = new Label("Choose how you want to play");
+        subtitle.setFont(Font.font("SansSerif", 18));
+        subtitle.setTextFill(TEXT_DIM);
+
+        HBox cardsRow = new HBox(24);
+        cardsRow.setAlignment(Pos.CENTER);
+        cardsRow.setPadding(new Insets(40, 0, 0, 0));
+
+        cardsRow.getChildren().addAll(
+                buildModeCard("♚", "LOCAL GAME", "Two players, one screen", ACCENT_PURPLE, this::startLocalGame),
+                buildModeCard("⌂", "HOST GAME", "Create a LAN session", ACCENT_CYAN, this::showHostMenu),
+                buildModeCard("→", "JOIN GAME", "Connect to a host", ACCENT_PINK, this::showJoinMenu)
+        );
+        
+        HBox toolsRow = new HBox(24);
+        toolsRow.setAlignment(Pos.CENTER);
+        toolsRow.setPadding(new Insets(20, 0, 0, 0));
+        
+        Button designBtn = new Button("🎨 Custom Piece Designer");
+        styleButton(designBtn);
+        designBtn.setOnAction(e -> CustomPieceDesigner.show(stage, this::show));
+
+        Button backBtn = new Button("← Back to Hub");
+        styleButton(backBtn);
+        backBtn.setOnAction(e -> hub.show());
+        
+        toolsRow.getChildren().addAll(backBtn, designBtn);
+
+        root.getChildren().addAll(title, subtitle, cardsRow, toolsRow);
+
+        Scene scene = new Scene(root, 900, 650);
+        stage.setScene(scene);
+    }
+
+    private VBox buildModeCard(String icon, String titleStr, String descStr, Color accent, Runnable onClick) {
+        VBox card = new VBox(10);
+        card.setAlignment(Pos.CENTER);
+        card.setPrefSize(220, 220);
+        card.setCursor(Cursor.HAND);
+
+        Background normalBg = new Background(new BackgroundFill(CARD_BG, new CornerRadii(20), Insets.EMPTY));
+        Background hoverBg = new Background(new BackgroundFill(CARD_HOVER, new CornerRadii(20), Insets.EMPTY));
+        card.setBackground(normalBg);
+        card.setStyle("-fx-border-color: " + toHexString(accent.darker().darker()) + "; -fx-border-width: 1.5; -fx-border-radius: 20;");
+
+        Label iconLabel = new Label(icon);
+        iconLabel.setFont(Font.font("SansSerif", 48));
+        iconLabel.setTextFill(accent);
+
+        Label titleLabel = new Label(titleStr);
+        titleLabel.setFont(Font.font("SansSerif", FontWeight.BOLD, 17));
+        titleLabel.setTextFill(accent);
+
+        Label descLabel = new Label(descStr);
+        descLabel.setFont(Font.font("SansSerif", 13));
+        descLabel.setTextFill(TEXT_DIM);
+
+        card.getChildren().addAll(iconLabel, titleLabel, descLabel);
+
+        card.setOnMouseEntered(e -> {
+            card.setBackground(hoverBg);
+            card.setStyle("-fx-border-color: " + toHexString(accent) + "; -fx-border-width: 2.5; -fx-border-radius: 20;");
+        });
+        card.setOnMouseExited(e -> {
+            card.setBackground(normalBg);
+            card.setStyle("-fx-border-color: " + toHexString(accent.darker().darker()) + "; -fx-border-width: 1.5; -fx-border-radius: 20;");
+        });
+        card.setOnMouseClicked(e -> onClick.run());
+
+        return card;
+    }
+
+    private String toHexString(Color color) {
+        return String.format("#%02X%02X%02X",
+                (int) (color.getRed() * 255),
+                (int) (color.getGreen() * 255),
+                (int) (color.getBlue() * 255));
+    }
+
+    private void styleButton(Button btn) {
+        btn.setStyle("-fx-background-color: #1e2341; -fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold; -fx-padding: 10 30;");
+        btn.setOnMouseEntered(e -> btn.setStyle("-fx-background-color: #282d50; -fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold; -fx-padding: 10 30;"));
+        btn.setOnMouseExited(e -> btn.setStyle("-fx-background-color: #1e2341; -fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold; -fx-padding: 10 30;"));
+    }
+
+    private void startLocalGame() {
+        GameLogic logic = new GameLogic("Player 1", "Player 2");
+        TetrisPanel panel = new TetrisPanel(logic, this::show);
+        
+        Scene scene = new Scene(panel, 1100, 750); // game board needs width
+        stage.setScene(scene);
+        stage.centerOnScreen();
+        
+        panel.setupKeyEvents();
+        panel.start();
+    }
+    
+    private void showHostMenu() {
+        VBox root = new VBox(20);
+        root.setAlignment(Pos.CENTER);
+        root.setStyle("-fx-background-color: #0f0f1e;");
+        
+        Label title = new Label("HOST GAME");
+        title.setFont(Font.font("SansSerif", FontWeight.BOLD, 32));
+        title.setTextFill(Color.WHITE);
+        
+        Label p1Label = new Label("Player 1 Name:");
+        p1Label.setTextFill(Color.WHITE);
+        TextField p1Field = new TextField("Player 1");
+        
+        Label status = new Label("Waiting to start...");
+        status.setTextFill(Color.GRAY);
+        
+        Button startBtn = new Button("Start Hosting (Port 8080)");
+        styleButton(startBtn);
+        startBtn.setOnAction(e -> {
+            startBtn.setDisable(true);
+            status.setText("Hosting on Port 8080... Waiting for Player 2.");
+            
+            GameLogic logic = new GameLogic(p1Field.getText(), "Player 2");
+            TetrisHost host = new TetrisHost(msg -> {
+                if (msg instanceof TetrisMessage) {
+                    TetrisMessage tm = (TetrisMessage) msg;
+                    if (tm.type == TetrisMessage.Type.INPUT_LEFT) logic.moveLeft(logic.p2);
+                    else if (tm.type == TetrisMessage.Type.INPUT_RIGHT) logic.moveRight(logic.p2);
+                    else if (tm.type == TetrisMessage.Type.INPUT_SOFT_DROP) logic.softDrop(logic.p2);
+                    else if (tm.type == TetrisMessage.Type.INPUT_HARD_DROP) logic.hardDrop(logic.p2);
+                    else if (tm.type == TetrisMessage.Type.INPUT_ROTATE_CW) logic.rotateCW(logic.p2);
+                    else if (tm.type == TetrisMessage.Type.INPUT_ROTATE_CCW) logic.rotateCCW(logic.p2);
+                }
+            }, () -> Platform.runLater(() -> {
+                status.setText("Connection Lost!");
+                status.setTextFill(Color.RED);
+            }));
+            
+            new Thread(() -> {
+                try {
+                    host.start(8080, p1Field.getText());
+                    // Start broadcast loop
+                    Platform.runLater(() -> {
+                        TetrisPanel panel = new TetrisPanel(logic, this::show);
+                        panel.setupKeyEvents();
+                        
+                        Thread broadcastThread = new Thread(() -> {
+                            while (true) {
+                                try { Thread.sleep(33); } catch (Exception ex) {}
+                                TetrisMessage sm = new TetrisMessage(TetrisMessage.Type.STATE_UPDATE);
+                                sm.p1 = logic.p1;
+                                sm.p2 = logic.p2;
+                                host.send(sm);
+                            }
+                        });
+                        broadcastThread.setDaemon(true);
+                        broadcastThread.start();
+                        
+                        Scene scene = new Scene(panel, 1100, 750);
+                        stage.setScene(scene);
+                        stage.centerOnScreen();
+                        panel.start();
+                    });
+                } catch (Exception ex) {
+                    Platform.runLater(() -> status.setText("Failed to host: " + ex.getMessage()));
+                }
+            }).start();
+        });
+        
+        Button backBtn = new Button("Back");
+        styleButton(backBtn);
+        backBtn.setOnAction(e -> show());
+        
+        root.getChildren().addAll(title, p1Label, p1Field, startBtn, status, backBtn);
+        stage.setScene(new Scene(root, 900, 650));
+    }
+    
+    private void showJoinMenu() {
+        VBox root = new VBox(20);
+        root.setAlignment(Pos.CENTER);
+        root.setStyle("-fx-background-color: #0f0f1e;");
+        
+        Label title = new Label("JOIN GAME");
+        title.setFont(Font.font("SansSerif", FontWeight.BOLD, 32));
+        title.setTextFill(Color.WHITE);
+        
+        Label p2Label = new Label("Your Name (Player 2):");
+        p2Label.setTextFill(Color.WHITE);
+        TextField p2Field = new TextField("Player 2");
+        
+        Label ipLabel = new Label("Host IP:");
+        ipLabel.setTextFill(Color.WHITE);
+        TextField ipField = new TextField("localhost");
+        
+        Label status = new Label("Ready to connect.");
+        status.setTextFill(Color.GRAY);
+        
+        VBox hostsList = new VBox(5);
+        hostsList.setAlignment(Pos.CENTER);
+        
+        Button scanBtn = new Button("Scan for LAN Hosts");
+        styleButton(scanBtn);
+        scanBtn.setOnAction(e -> {
+            hostsList.getChildren().clear();
+            status.setText("Scanning...");
+            new Thread(() -> {
+                try (DatagramSocket udpSocket = new DatagramSocket()) {
+                    udpSocket.setBroadcast(true);
+                    udpSocket.setSoTimeout(1000);
+                    
+                    byte[] reqData = "TETRIS_DISCOVER".getBytes();
+                    DatagramPacket reqPacket = new DatagramPacket(reqData, reqData.length, InetAddress.getByName("255.255.255.255"), 8081);
+                    udpSocket.send(reqPacket);
+                    
+                    byte[] buf = new byte[256];
+                    while (true) {
+                        try {
+                            DatagramPacket resp = new DatagramPacket(buf, buf.length);
+                            udpSocket.receive(resp);
+                            String data = new String(resp.getData(), 0, resp.getLength());
+                            if (data.startsWith("TETRIS_HOST:")) {
+                                String[] parts = data.split(":");
+                                String hostName = parts[1];
+                                String ip = resp.getAddress().getHostAddress();
+                                
+                                Platform.runLater(() -> {
+                                    Button hostBtn = new Button("Join " + hostName + " (" + ip + ")");
+                                    hostBtn.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold;");
+                                    hostBtn.setOnAction(ev -> ipField.setText(ip));
+                                    hostsList.getChildren().add(hostBtn);
+                                });
+                            }
+                        } catch (Exception ex) { break; } // Timeout or error
+                    }
+                } catch (Exception ex) {}
+                Platform.runLater(() -> status.setText("Scan complete."));
+            }).start();
+        });
+        
+        Button connectBtn = new Button("Connect to Host");
+        styleButton(connectBtn);
+        connectBtn.setOnAction(e -> {
+            connectBtn.setDisable(true);
+            status.setText("Connecting...");
+            
+            TetrisPanel panel = new TetrisPanel(new GameLogic("P1", "P2"), this::show);
+            
+            TetrisClient client = new TetrisClient(msg -> {
+                if (msg instanceof TetrisMessage) {
+                    TetrisMessage tm = (TetrisMessage) msg;
+                    if (tm.type == TetrisMessage.Type.STATE_UPDATE) {
+                        Platform.runLater(() -> {
+                            GameLogic syncLogic = new GameLogic(tm.p1.name, tm.p2.name);
+                            syncLogic.p1 = tm.p1;
+                            syncLogic.p2 = tm.p2;
+                            panel.updateState(syncLogic);
+                        });
+                    }
+                }
+            }, () -> Platform.runLater(() -> {
+                status.setText("Connection Lost!");
+                status.setTextFill(Color.RED);
+            }));
+            
+            new Thread(() -> {
+                try {
+                    client.connect(ipField.getText(), 8080);
+                    Platform.runLater(() -> {
+                        panel.setNetworkMode(true, type -> {
+                            client.send(new TetrisMessage(type));
+                        });
+                        panel.setupKeyEvents();
+                        stage.setScene(new Scene(panel, 1100, 750));
+                        stage.centerOnScreen();
+                        panel.start();
+                    });
+                } catch (Exception ex) {
+                    Platform.runLater(() -> {
+                        status.setText("Failed to connect: " + ex.getMessage());
+                        connectBtn.setDisable(false);
+                    });
+                }
+            }).start();
+        });
+        
+        Button backBtn = new Button("Back");
+        styleButton(backBtn);
+        backBtn.setOnAction(e -> show());
+        
+        root.getChildren().addAll(title, p2Label, p2Field, scanBtn, hostsList, ipLabel, ipField, connectBtn, status, backBtn);
+        stage.setScene(new Scene(root, 900, 650));
+    }
+}

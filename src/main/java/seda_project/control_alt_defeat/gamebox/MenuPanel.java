@@ -38,6 +38,7 @@ public class MenuPanel extends StackPane {
     private final BiConsumer<Integer, Integer> onLocalGame;
     private final BiConsumer<Integer, Integer> onHost;
     private final TriConsumer<String, String, Integer> onJoin;
+    private final Runnable onBackToHub;
 
     @FunctionalInterface
     public interface TriConsumer<A, B, C> {
@@ -82,10 +83,12 @@ public class MenuPanel extends StackPane {
 
     public MenuPanel(BiConsumer<Integer, Integer> onLocalGame,
             BiConsumer<Integer, Integer> onHost,
-            TriConsumer<String, String, Integer> onJoin) {
+            TriConsumer<String, String, Integer> onJoin,
+            Runnable onBackToHub) {
         this.onLocalGame = onLocalGame;
         this.onHost = onHost;
         this.onJoin = onJoin;
+        this.onBackToHub = onBackToHub;
 
         setBackground(new Background(new BackgroundFill(BG_COLOR, CornerRadii.EMPTY, Insets.EMPTY)));
 
@@ -126,7 +129,17 @@ public class MenuPanel extends StackPane {
                     showScreen(joinScreen);
                 }));
 
-        center.getChildren().addAll(title, subtitle, cardsRow);
+        Button backBtn = new Button("← Back to Hub");
+        backBtn.setStyle("-fx-background-color: " + toHexString(CARD_BG) + "; -fx-text-fill: " + toHexString(TEXT_DIM)
+                + "; -fx-font-weight: bold; -fx-font-size: 16px; -fx-padding: 10 20;");
+        backBtn.setCursor(Cursor.HAND);
+        backBtn.setOnAction(e -> onBackToHub.run());
+
+        HBox backRow = new HBox(backBtn);
+        backRow.setAlignment(Pos.CENTER);
+        backRow.setPadding(new Insets(30, 0, 0, 0));
+
+        center.getChildren().addAll(title, subtitle, cardsRow, backRow);
         return center;
     }
 

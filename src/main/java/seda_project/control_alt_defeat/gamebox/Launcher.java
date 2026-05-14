@@ -9,8 +9,8 @@ public class Launcher extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        GameBox window = new GameBox(primaryStage); // Start GameBox
-        window.show();
+        GameHub hub = new GameHub(primaryStage);
+        hub.show();
     }
 
     // Launch app.
