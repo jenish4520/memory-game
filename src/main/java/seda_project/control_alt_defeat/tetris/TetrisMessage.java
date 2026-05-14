@@ -6,7 +6,7 @@ public class TetrisMessage implements Serializable {
     public enum Type {
         STATE_UPDATE,
         INPUT_LEFT, INPUT_RIGHT, INPUT_SOFT_DROP, INPUT_HARD_DROP, INPUT_ROTATE_CW, INPUT_ROTATE_CCW,
-        RESTART_REQUEST
+        RESTART_REQUEST, PLAYER_NAME
     }
 
     public Type type;

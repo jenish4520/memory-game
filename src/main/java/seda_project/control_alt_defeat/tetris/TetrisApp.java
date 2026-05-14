@@ -26,6 +26,9 @@ public class TetrisApp {
 
     private Stage stage;
     private GameHub hub;
+    // Held so we can close them when navigating away
+    private TetrisHost activeHost;
+    private TetrisClient activeClient;
 
     private static final Color CARD_BG = Color.web("#1e2341");
     private static final Color CARD_HOVER = Color.web("#282d50");
@@ -37,6 +40,12 @@ public class TetrisApp {
     public TetrisApp(Stage stage, GameHub hub) {
         this.stage = stage;
         this.hub = hub;
+    }
+
+    /** Closes any active network connections before navigating away. */
+    private void closeNetwork() {
+        if (activeHost != null) { activeHost.close(); activeHost = null; }
+        if (activeClient != null) { activeClient.close(); activeClient = null; }
     }
 
     public void show() {
@@ -171,29 +180,37 @@ public class TetrisApp {
             TetrisHost host = new TetrisHost(msg -> {
                 if (msg instanceof TetrisMessage) {
                     TetrisMessage tm = (TetrisMessage) msg;
-                    if (tm.type == TetrisMessage.Type.INPUT_LEFT) logic.moveLeft(logic.p2);
-                    else if (tm.type == TetrisMessage.Type.INPUT_RIGHT) logic.moveRight(logic.p2);
-                    else if (tm.type == TetrisMessage.Type.INPUT_SOFT_DROP) logic.softDrop(logic.p2);
-                    else if (tm.type == TetrisMessage.Type.INPUT_HARD_DROP) logic.hardDrop(logic.p2);
-                    else if (tm.type == TetrisMessage.Type.INPUT_ROTATE_CW) logic.rotateCW(logic.p2);
-                    else if (tm.type == TetrisMessage.Type.INPUT_ROTATE_CCW) logic.rotateCCW(logic.p2);
+                    if (tm.type == TetrisMessage.Type.PLAYER_NAME && tm.playerName != null) {
+                        logic.p2.name = tm.playerName;  // update to the client's chosen name
+                    } else if (tm.type == TetrisMessage.Type.INPUT_LEFT)       logic.moveLeft(logic.p2);
+                    else if (tm.type == TetrisMessage.Type.INPUT_RIGHT)         logic.moveRight(logic.p2);
+                    else if (tm.type == TetrisMessage.Type.INPUT_SOFT_DROP)     logic.softDrop(logic.p2);
+                    else if (tm.type == TetrisMessage.Type.INPUT_HARD_DROP)     logic.hardDrop(logic.p2);
+                    else if (tm.type == TetrisMessage.Type.INPUT_ROTATE_CW)     logic.rotateCW(logic.p2);
+                    else if (tm.type == TetrisMessage.Type.INPUT_ROTATE_CCW)    logic.rotateCCW(logic.p2);
                 }
             }, () -> Platform.runLater(() -> {
                 status.setText("Connection Lost!");
                 status.setTextFill(Color.RED);
             }));
+            activeHost = host;
             
             new Thread(() -> {
                 try {
                     host.start(8080, p1Field.getText());
-                    // Start broadcast loop
                     Platform.runLater(() -> {
-                        TetrisPanel panel = new TetrisPanel(logic, this::show);
+                        boolean[] broadcastRunning = { true };
+                        TetrisPanel panel = new TetrisPanel(logic, () -> {
+                            broadcastRunning[0] = false;
+                            closeNetwork();
+                            show();
+                        });
+                        panel.setLanHostMode();   // host uses both key schemes for P1 only
                         panel.setupKeyEvents();
                         
                         Thread broadcastThread = new Thread(() -> {
-                            while (true) {
-                                try { Thread.sleep(33); } catch (Exception ex) {}
+                            while (broadcastRunning[0]) {
+                                try { Thread.sleep(33); } catch (Exception ex) { break; }
                                 TetrisMessage sm = new TetrisMessage(TetrisMessage.Type.STATE_UPDATE);
                                 sm.p1 = logic.p1;
                                 sm.p2 = logic.p2;
@@ -216,7 +233,8 @@ public class TetrisApp {
         
         Button backBtn = new Button("Back");
         styleButton(backBtn);
-        backBtn.setOnAction(e -> show());
+        // Bug fix #1: close the host (stops UDP responder) when navigating back
+        backBtn.setOnAction(e -> { closeNetwork(); show(); });
         
         root.getChildren().addAll(title, p1Label, p1Field, startBtn, status, backBtn);
         stage.setScene(new Scene(root, 900, 650));
@@ -290,28 +308,33 @@ public class TetrisApp {
             connectBtn.setDisable(true);
             status.setText("Connecting...");
             
-            TetrisPanel panel = new TetrisPanel(new GameLogic("P1", "P2"), this::show);
+            // Bug fix #2: client panel starts with a placeholder logic; the real state
+            // arrives via STATE_UPDATE — the client must NOT run logic.update() itself.
+            TetrisPanel panel = new TetrisPanel(new GameLogic("P1", "P2"), () -> {
+                closeNetwork();
+                show();
+            });
             
             TetrisClient client = new TetrisClient(msg -> {
                 if (msg instanceof TetrisMessage) {
                     TetrisMessage tm = (TetrisMessage) msg;
                     if (tm.type == TetrisMessage.Type.STATE_UPDATE) {
-                        Platform.runLater(() -> {
-                            GameLogic syncLogic = new GameLogic(tm.p1.name, tm.p2.name);
-                            syncLogic.p1 = tm.p1;
-                            syncLogic.p2 = tm.p2;
-                            panel.updateState(syncLogic);
-                        });
+                        Platform.runLater(() -> panel.updateState(tm.p1, tm.p2));
                     }
                 }
             }, () -> Platform.runLater(() -> {
                 status.setText("Connection Lost!");
                 status.setTextFill(Color.RED);
             }));
+            activeClient = client;
             
             new Thread(() -> {
                 try {
                     client.connect(ipField.getText(), 8080);
+                    // Send chosen name immediately so host can update P2's display name
+                    TetrisMessage nameMsg = new TetrisMessage(TetrisMessage.Type.PLAYER_NAME);
+                    nameMsg.playerName = p2Field.getText();
+                    client.send(nameMsg);
                     Platform.runLater(() -> {
                         panel.setNetworkMode(true, type -> {
                             client.send(new TetrisMessage(type));

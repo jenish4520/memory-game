@@ -24,6 +24,7 @@ public class TetrisPanel extends StackPane {
     private int BOARD_H = Board.HEIGHT * CELL;
     
     private boolean isClient = false;
+    private boolean isLanHost = false;
     private java.util.function.Consumer<TetrisMessage.Type> outMessage;
     
     // Key states
@@ -39,11 +40,10 @@ public class TetrisPanel extends StackPane {
         this.logic = logic;
         canvas = new Canvas(900, 650);
         
-        // Bind canvas size to parent size so it resizes
         canvas.widthProperty().bind(widthProperty());
         canvas.heightProperty().bind(heightProperty());
         
-        Button backBtn = new Button("← Quit Game");
+        Button backBtn = new Button("\u2190 Quit Game");
         backBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
         backBtn.setOnAction(e -> {
             stop();
@@ -59,11 +59,14 @@ public class TetrisPanel extends StackPane {
         setOnKeyPressed(e -> activeKeys.add(e.getCode()));
         setOnKeyReleased(e -> {
             activeKeys.remove(e.getCode());
-            if (e.getCode() == KeyCode.LEFT || e.getCode() == KeyCode.RIGHT) {
-                initialDAS_P1 = false;
-            }
-            if (e.getCode() == KeyCode.A || e.getCode() == KeyCode.D) {
-                initialDAS_P2 = false;
+            boolean horizontal = e.getCode() == KeyCode.LEFT || e.getCode() == KeyCode.RIGHT
+                    || e.getCode() == KeyCode.A || e.getCode() == KeyCode.D;
+            if (isClient || isLanHost) {
+                // In network modes all horizontal keys are aliases for the local player
+                if (horizontal) { initialDAS_P1 = false; initialDAS_P2 = false; }
+            } else {
+                if (e.getCode() == KeyCode.LEFT || e.getCode() == KeyCode.RIGHT) initialDAS_P1 = false;
+                if (e.getCode() == KeyCode.A    || e.getCode() == KeyCode.D)     initialDAS_P2 = false;
             }
         });
     }
@@ -72,21 +75,30 @@ public class TetrisPanel extends StackPane {
         this.isClient = isClient;
         this.outMessage = outMessage;
     }
+
+    public void setLanHostMode() {
+        this.isLanHost = true;
+    }
     
-    public void updateState(GameLogic state) {
-        this.logic = state;
+    public void updateState(PlayerState p1, PlayerState p2) {
+        this.logic.p1 = p1;
+        this.logic.p2 = p2;
     }
     
     public void start() {
         Platform.runLater(this::requestFocus);
         running = true;
         loopThread = new Thread(() -> {
-            long lastTime = System.currentTimeMillis();
             while (running) {
                 long now = System.currentTimeMillis();
                 
                 handleInput(now);
-                logic.update(now);
+                // Bug fix #2: the client is a pure display – the host owns all
+                // game state. Running logic.update() here would corrupt scores
+                // and piece positions between network packets.
+                if (!isClient) {
+                    logic.update(now);
+                }
                 
                 Platform.runLater(this::render);
                 
@@ -107,81 +119,85 @@ public class TetrisPanel extends StackPane {
     
     private void handleInput(long now) {
         if (isClient) {
-            // Client DAS
-            if (activeKeys.contains(KeyCode.A)) {
+            // Client: arrow keys and WASD are both valid
+            boolean goLeft  = activeKeys.contains(KeyCode.A)    || activeKeys.contains(KeyCode.LEFT);
+            boolean goRight = activeKeys.contains(KeyCode.D)    || activeKeys.contains(KeyCode.RIGHT);
+            boolean softDrp = activeKeys.contains(KeyCode.DOWN) || activeKeys.contains(KeyCode.W);
+            if (goLeft) {
                 if (!initialDAS_P2) {
                     outMessage.accept(TetrisMessage.Type.INPUT_LEFT);
-                    initialDAS_P2 = true;
-                    lastDAS_P2 = now;
+                    initialDAS_P2 = true; lastDAS_P2 = now;
                 } else if (now - lastDAS_P2 > 170 && now - lastRepeat_P2 > 50) {
                     outMessage.accept(TetrisMessage.Type.INPUT_LEFT);
                     lastRepeat_P2 = now;
                 }
-            } else if (activeKeys.contains(KeyCode.D)) {
+            } else if (goRight) {
                 if (!initialDAS_P2) {
                     outMessage.accept(TetrisMessage.Type.INPUT_RIGHT);
-                    initialDAS_P2 = true;
-                    lastDAS_P2 = now;
+                    initialDAS_P2 = true; lastDAS_P2 = now;
                 } else if (now - lastDAS_P2 > 170 && now - lastRepeat_P2 > 50) {
                     outMessage.accept(TetrisMessage.Type.INPUT_RIGHT);
                     lastRepeat_P2 = now;
                 }
             }
-            if (activeKeys.contains(KeyCode.W)) {
-                outMessage.accept(TetrisMessage.Type.INPUT_SOFT_DROP);
+            if (softDrp) outMessage.accept(TetrisMessage.Type.INPUT_SOFT_DROP);
+            return;
+        }
+
+        if (isLanHost) {
+            // Host (P1 only): arrow keys and WASD are both valid
+            boolean goLeft  = activeKeys.contains(KeyCode.A)    || activeKeys.contains(KeyCode.LEFT);
+            boolean goRight = activeKeys.contains(KeyCode.D)    || activeKeys.contains(KeyCode.RIGHT);
+            boolean softDrp = activeKeys.contains(KeyCode.DOWN) || activeKeys.contains(KeyCode.W);
+            if (goLeft) {
+                if (!initialDAS_P1) {
+                    logic.moveLeft(logic.p1);
+                    initialDAS_P1 = true; lastDAS_P1 = now;
+                } else if (now - lastDAS_P1 > 170 && now - lastRepeat_P1 > 50) {
+                    logic.moveLeft(logic.p1); lastRepeat_P1 = now;
+                }
+            } else if (goRight) {
+                if (!initialDAS_P1) {
+                    logic.moveRight(logic.p1);
+                    initialDAS_P1 = true; lastDAS_P1 = now;
+                } else if (now - lastDAS_P1 > 170 && now - lastRepeat_P1 > 50) {
+                    logic.moveRight(logic.p1); lastRepeat_P1 = now;
+                }
             }
+            if (softDrp) logic.softDrop(logic.p1);
             return;
         }
         
-        // P1 DAS
+        // Local game: P1 = arrow keys, P2 = WASD
         if (activeKeys.contains(KeyCode.LEFT)) {
             if (!initialDAS_P1) {
-                logic.moveLeft(logic.p1);
-                initialDAS_P1 = true;
-                lastDAS_P1 = now;
+                logic.moveLeft(logic.p1); initialDAS_P1 = true; lastDAS_P1 = now;
             } else if (now - lastDAS_P1 > 170 && now - lastRepeat_P1 > 50) {
-                logic.moveLeft(logic.p1);
-                lastRepeat_P1 = now;
+                logic.moveLeft(logic.p1); lastRepeat_P1 = now;
             }
         } else if (activeKeys.contains(KeyCode.RIGHT)) {
             if (!initialDAS_P1) {
-                logic.moveRight(logic.p1);
-                initialDAS_P1 = true;
-                lastDAS_P1 = now;
+                logic.moveRight(logic.p1); initialDAS_P1 = true; lastDAS_P1 = now;
             } else if (now - lastDAS_P1 > 170 && now - lastRepeat_P1 > 50) {
-                logic.moveRight(logic.p1);
-                lastRepeat_P1 = now;
+                logic.moveRight(logic.p1); lastRepeat_P1 = now;
             }
         }
+        if (activeKeys.contains(KeyCode.DOWN)) logic.softDrop(logic.p1);
         
-        if (activeKeys.contains(KeyCode.DOWN)) {
-            logic.softDrop(logic.p1);
-        }
-        
-        // P2 DAS (A/D)
         if (activeKeys.contains(KeyCode.A)) {
             if (!initialDAS_P2) {
-                logic.moveLeft(logic.p2);
-                initialDAS_P2 = true;
-                lastDAS_P2 = now;
+                logic.moveLeft(logic.p2); initialDAS_P2 = true; lastDAS_P2 = now;
             } else if (now - lastDAS_P2 > 170 && now - lastRepeat_P2 > 50) {
-                logic.moveLeft(logic.p2);
-                lastRepeat_P2 = now;
+                logic.moveLeft(logic.p2); lastRepeat_P2 = now;
             }
         } else if (activeKeys.contains(KeyCode.D)) {
             if (!initialDAS_P2) {
-                logic.moveRight(logic.p2);
-                initialDAS_P2 = true;
-                lastDAS_P2 = now;
+                logic.moveRight(logic.p2); initialDAS_P2 = true; lastDAS_P2 = now;
             } else if (now - lastDAS_P2 > 170 && now - lastRepeat_P2 > 50) {
-                logic.moveRight(logic.p2);
-                lastRepeat_P2 = now;
+                logic.moveRight(logic.p2); lastRepeat_P2 = now;
             }
         }
-        
-        if (activeKeys.contains(KeyCode.W)) {
-            logic.softDrop(logic.p2);
-        }
+        if (activeKeys.contains(KeyCode.W)) logic.softDrop(logic.p2);
     }
     
     // We also need one-time presses for rotation and hard drop.
@@ -190,22 +206,34 @@ public class TetrisPanel extends StackPane {
         setOnKeyPressed(e -> {
             activeKeys.add(e.getCode());
             if (isClient) {
+                // Client: both arrow-key and WASD schemes work
                 switch(e.getCode()) {
-                    case S: outMessage.accept(TetrisMessage.Type.INPUT_ROTATE_CW); break;
-                    case Q: outMessage.accept(TetrisMessage.Type.INPUT_ROTATE_CCW); break;
-                    case SHIFT: outMessage.accept(TetrisMessage.Type.INPUT_HARD_DROP); break;
+                    case UP: case S:     outMessage.accept(TetrisMessage.Type.INPUT_ROTATE_CW);  break;
+                    case Z:  case Q:     outMessage.accept(TetrisMessage.Type.INPUT_ROTATE_CCW); break;
+                    case SPACE: case SHIFT: outMessage.accept(TetrisMessage.Type.INPUT_HARD_DROP); break;
+                    default: break;
                 }
                 return;
             }
-            
+            if (isLanHost) {
+                // Host (P1 only): both arrow-key and WASD schemes work
+                switch(e.getCode()) {
+                    case UP: case S:     logic.rotateCW(logic.p1);  break;
+                    case Z:  case Q:     logic.rotateCCW(logic.p1); break;
+                    case SPACE: case SHIFT: logic.hardDrop(logic.p1); break;
+                    default: break;
+                }
+                return;
+            }
+            // Local game
             switch(e.getCode()) {
-                case UP: logic.rotateCW(logic.p1); break;
-                case Z: logic.rotateCCW(logic.p1); break;
-                case SPACE: logic.hardDrop(logic.p1); break;
-                
-                case S: logic.rotateCW(logic.p2); break;
-                case Q: logic.rotateCCW(logic.p2); break;
-                case SHIFT: logic.hardDrop(logic.p2); break;
+                case UP:    logic.rotateCW(logic.p1);  break;
+                case Z:     logic.rotateCCW(logic.p1); break;
+                case SPACE: logic.hardDrop(logic.p1);  break;
+                case S:     logic.rotateCW(logic.p2);  break;
+                case Q:     logic.rotateCCW(logic.p2); break;
+                case SHIFT: logic.hardDrop(logic.p2);  break;
+                default: break;
             }
         });
     }
