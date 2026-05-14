@@ -14,38 +14,41 @@ public class TetrisHost {
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private Consumer<Object> onMessage;
-    private Runnable onDisconnect;
+    public Runnable onDisconnect;
+    private DatagramSocket udpSocket; // stored so close() can break blocking receive()
+    private boolean disconnectFired = false;
 
     public TetrisHost(Consumer<Object> onMessage, Runnable onDisconnect) {
         this.onMessage = onMessage;
         this.onDisconnect = onDisconnect;
     }
 
-    private Thread udpThread;
-
     public void start(int port, String hostName) throws Exception {
-        // Start UDP Discovery responder
-        udpThread = new Thread(() -> {
-            try (DatagramSocket udpSocket = new DatagramSocket(8081)) {
+        udpSocket = new DatagramSocket(8081);
+        Thread udpThread = new Thread(() -> {
+            try {
                 byte[] buf = new byte[256];
-                while (!Thread.currentThread().isInterrupted()) {
+                while (true) {
                     DatagramPacket packet = new DatagramPacket(buf, buf.length);
-                    udpSocket.receive(packet);
+                    udpSocket.receive(packet); // broken by udpSocket.close() in close()
                     String req = new String(packet.getData(), 0, packet.getLength()).trim();
                     if (req.equals("TETRIS_DISCOVER")) {
                         String resp = "TETRIS_HOST:" + hostName + ":" + port;
                         byte[] respData = resp.getBytes();
-                        DatagramPacket respPacket = new DatagramPacket(respData, respData.length, packet.getAddress(), packet.getPort());
+                        DatagramPacket respPacket = new DatagramPacket(
+                                respData, respData.length, packet.getAddress(), packet.getPort());
                         udpSocket.send(respPacket);
                     }
                 }
-            } catch (Exception e) {}
+            } catch (Exception e) { /* closed */ }
         });
         udpThread.setDaemon(true);
         udpThread.start();
 
         serverSocket = new ServerSocket(port);
         clientSocket = serverSocket.accept();
+        // Client connected — stop advertising so stale hosts never appear
+        if (udpSocket != null && !udpSocket.isClosed()) udpSocket.close();
         clientSocket.setTcpNoDelay(true);
         out = new ObjectOutputStream(clientSocket.getOutputStream());
         in = new ObjectInputStream(clientSocket.getInputStream());
@@ -57,9 +60,13 @@ public class TetrisHost {
                     onMessage.accept(msg);
                 }
             } catch (Exception e) {
-                onDisconnect.run();
+                fireDisconnect();
             }
         }).start();
+    }
+
+    private synchronized void fireDisconnect() {
+        if (!disconnectFired) { disconnectFired = true; onDisconnect.run(); }
     }
 
     public void send(Object msg) {
@@ -70,15 +77,13 @@ public class TetrisHost {
                 out.flush();
             }
         } catch (Exception e) {
-            onDisconnect.run();
+            fireDisconnect();
         }
     }
 
     public void close() {
-        if (udpThread != null) udpThread.interrupt();
-        try {
-            if (serverSocket != null) serverSocket.close();
-            if (clientSocket != null) clientSocket.close();
-        } catch (Exception e) {}
+        try { if (udpSocket != null && !udpSocket.isClosed()) udpSocket.close(); } catch (Exception e) {}
+        try { if (serverSocket != null) serverSocket.close(); } catch (Exception e) {}
+        try { if (clientSocket != null) clientSocket.close(); } catch (Exception e) {}
     }
 }

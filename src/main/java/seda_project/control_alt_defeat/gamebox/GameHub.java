@@ -51,12 +51,12 @@ public class GameHub {
         cardsRow.setAlignment(Pos.CENTER);
         cardsRow.setPadding(new Insets(40, 0, 0, 0));
 
-        VBox memoryCard = buildModeCard("🧠", "MEMORY GAME", "Match the cards", ACCENT_CYAN, () -> {
+        VBox memoryCard = buildModeCard("1.", "MEMORY GAME", "Match the cards", ACCENT_CYAN, () -> {
             GameBox memoryGame = new GameBox(stage, this);
             memoryGame.show();
         });
 
-        VBox tetrisCard = buildModeCard("🧱", "TETRIS", "Classic block puzzle", ACCENT_PINK, () -> {
+        VBox tetrisCard = buildModeCard("2.", "TETRIS", "Classic block puzzle", ACCENT_PINK, () -> {
             TetrisApp tetrisGame = new TetrisApp(stage, this);
             tetrisGame.show();
         });

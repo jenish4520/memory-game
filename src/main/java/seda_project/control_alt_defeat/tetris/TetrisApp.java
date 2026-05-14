@@ -200,14 +200,25 @@ public class TetrisApp {
                     host.start(8080, p1Field.getText());
                     Platform.runLater(() -> {
                         boolean[] broadcastRunning = { true };
+                        // Panel reference needed by the disconnect lambda below
+                        TetrisPanel[] panelRef = { null };
                         TetrisPanel panel = new TetrisPanel(logic, () -> {
                             broadcastRunning[0] = false;
                             closeNetwork();
                             show();
                         });
-                        panel.setLanHostMode();   // host uses both key schemes for P1 only
+                        panelRef[0] = panel;
+                        panel.setLanHostMode();
                         panel.setupKeyEvents();
-                        
+
+                        // Disconnect handler can now show overlay on the live panel
+                        host.onDisconnect = () -> Platform.runLater(() -> {
+                            broadcastRunning[0] = false;
+                            if (panelRef[0] != null) {
+                                panelRef[0].showDisconnectOverlay(() -> { closeNetwork(); show(); });
+                            }
+                        });
+
                         Thread broadcastThread = new Thread(() -> {
                             while (broadcastRunning[0]) {
                                 try { Thread.sleep(33); } catch (Exception ex) { break; }
@@ -219,7 +230,7 @@ public class TetrisApp {
                         });
                         broadcastThread.setDaemon(true);
                         broadcastThread.start();
-                        
+
                         Scene scene = new Scene(panel, 1100, 750);
                         stage.setScene(scene);
                         stage.centerOnScreen();
@@ -308,13 +319,11 @@ public class TetrisApp {
             connectBtn.setDisable(true);
             status.setText("Connecting...");
             
-            // Bug fix #2: client panel starts with a placeholder logic; the real state
-            // arrives via STATE_UPDATE — the client must NOT run logic.update() itself.
             TetrisPanel panel = new TetrisPanel(new GameLogic("P1", "P2"), () -> {
                 closeNetwork();
                 show();
             });
-            
+
             TetrisClient client = new TetrisClient(msg -> {
                 if (msg instanceof TetrisMessage) {
                     TetrisMessage tm = (TetrisMessage) msg;
@@ -322,10 +331,9 @@ public class TetrisApp {
                         Platform.runLater(() -> panel.updateState(tm.p1, tm.p2));
                     }
                 }
-            }, () -> Platform.runLater(() -> {
-                status.setText("Connection Lost!");
-                status.setTextFill(Color.RED);
-            }));
+            }, () -> Platform.runLater(() ->
+                panel.showDisconnectOverlay(() -> { closeNetwork(); show(); })
+            ));
             activeClient = client;
             
             new Thread(() -> {

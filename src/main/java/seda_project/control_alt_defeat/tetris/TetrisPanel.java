@@ -119,10 +119,11 @@ public class TetrisPanel extends StackPane {
     
     private void handleInput(long now) {
         if (isClient) {
-            // Client: arrow keys and WASD are both valid
-            boolean goLeft  = activeKeys.contains(KeyCode.A)    || activeKeys.contains(KeyCode.LEFT);
-            boolean goRight = activeKeys.contains(KeyCode.D)    || activeKeys.contains(KeyCode.RIGHT);
-            boolean softDrp = activeKeys.contains(KeyCode.DOWN) || activeKeys.contains(KeyCode.W);
+            // P2 board is inverted — pieces rise upward visually.
+            // UP = accelerate upward (soft drop), LEFT/A = move left, RIGHT/D = move right.
+            boolean goLeft  = activeKeys.contains(KeyCode.A)   || activeKeys.contains(KeyCode.LEFT);
+            boolean goRight = activeKeys.contains(KeyCode.D)   || activeKeys.contains(KeyCode.RIGHT);
+            boolean softDrp = activeKeys.contains(KeyCode.UP)  || activeKeys.contains(KeyCode.W);
             if (goLeft) {
                 if (!initialDAS_P2) {
                     outMessage.accept(TetrisMessage.Type.INPUT_LEFT);
@@ -145,10 +146,10 @@ public class TetrisPanel extends StackPane {
         }
 
         if (isLanHost) {
-            // Host (P1 only): arrow keys and WASD are both valid
+            // P1 board — pieces fall downward. DOWN/S = soft drop, UP/W = rotate.
             boolean goLeft  = activeKeys.contains(KeyCode.A)    || activeKeys.contains(KeyCode.LEFT);
             boolean goRight = activeKeys.contains(KeyCode.D)    || activeKeys.contains(KeyCode.RIGHT);
-            boolean softDrp = activeKeys.contains(KeyCode.DOWN) || activeKeys.contains(KeyCode.W);
+            boolean softDrp = activeKeys.contains(KeyCode.DOWN) || activeKeys.contains(KeyCode.S);
             if (goLeft) {
                 if (!initialDAS_P1) {
                     logic.moveLeft(logic.p1);
@@ -167,7 +168,7 @@ public class TetrisPanel extends StackPane {
             if (softDrp) logic.softDrop(logic.p1);
             return;
         }
-        
+
         // Local game: P1 = arrow keys, P2 = WASD
         if (activeKeys.contains(KeyCode.LEFT)) {
             if (!initialDAS_P1) {
@@ -183,7 +184,7 @@ public class TetrisPanel extends StackPane {
             }
         }
         if (activeKeys.contains(KeyCode.DOWN)) logic.softDrop(logic.p1);
-        
+
         if (activeKeys.contains(KeyCode.A)) {
             if (!initialDAS_P2) {
                 logic.moveLeft(logic.p2); initialDAS_P2 = true; lastDAS_P2 = now;
@@ -206,21 +207,21 @@ public class TetrisPanel extends StackPane {
         setOnKeyPressed(e -> {
             activeKeys.add(e.getCode());
             if (isClient) {
-                // Client: both arrow-key and WASD schemes work
+                // P2 inverted board: DOWN=rotateCW (S in WASD), UP=softdrop (W), SPACE/SHIFT=hardDrop
                 switch(e.getCode()) {
-                    case UP: case S:     outMessage.accept(TetrisMessage.Type.INPUT_ROTATE_CW);  break;
-                    case Z:  case Q:     outMessage.accept(TetrisMessage.Type.INPUT_ROTATE_CCW); break;
-                    case SPACE: case SHIFT: outMessage.accept(TetrisMessage.Type.INPUT_HARD_DROP); break;
+                    case DOWN: case S:      outMessage.accept(TetrisMessage.Type.INPUT_ROTATE_CW);  break;
+                    case Z:    case Q:      outMessage.accept(TetrisMessage.Type.INPUT_ROTATE_CCW); break;
+                    case SPACE: case SHIFT: outMessage.accept(TetrisMessage.Type.INPUT_HARD_DROP);  break;
                     default: break;
                 }
                 return;
             }
             if (isLanHost) {
-                // Host (P1 only): both arrow-key and WASD schemes work
+                // P1 falling down: UP=rotateCW (W in WASD), Z/Q=rotateCCW, SPACE/SHIFT=hardDrop
                 switch(e.getCode()) {
-                    case UP: case S:     logic.rotateCW(logic.p1);  break;
-                    case Z:  case Q:     logic.rotateCCW(logic.p1); break;
-                    case SPACE: case SHIFT: logic.hardDrop(logic.p1); break;
+                    case UP:   case W:      logic.rotateCW(logic.p1);  break;
+                    case Z:    case Q:      logic.rotateCCW(logic.p1); break;
+                    case SPACE: case SHIFT: logic.hardDrop(logic.p1);  break;
                     default: break;
                 }
                 return;
@@ -235,6 +236,35 @@ public class TetrisPanel extends StackPane {
                 case SHIFT: logic.hardDrop(logic.p2);  break;
                 default: break;
             }
+        });
+    }
+
+    /** Shows a full-screen "Connection Lost" overlay and stops the game loop. */
+    public void showDisconnectOverlay(Runnable onQuit) {
+        stop();
+        Platform.runLater(() -> {
+            javafx.scene.canvas.GraphicsContext gc = canvas.getGraphicsContext2D();
+            double w = canvas.getWidth();
+            double h = canvas.getHeight();
+            gc.setFill(Color.color(0, 0, 0, 0.82));
+            gc.fillRect(0, 0, w, h);
+
+            gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 48));
+            gc.setFill(Color.web("#e74c3c"));
+            String line1 = "CONNECTION LOST";
+            gc.fillText(line1, w / 2 - line1.length() * 13, h / 2 - 30);
+
+            gc.setFont(Font.font("SansSerif", 22));
+            gc.setFill(Color.web("#8c8caa"));
+            String line2 = "The other player has disconnected.";
+            gc.fillText(line2, w / 2 - line2.length() * 6, h / 2 + 20);
+
+            Button quitBtn = new Button("Return to Menu");
+            quitBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-padding: 10 28;");
+            quitBtn.setOnAction(ev -> onQuit.run());
+            StackPane.setAlignment(quitBtn, javafx.geometry.Pos.CENTER);
+            StackPane.setMargin(quitBtn, new javafx.geometry.Insets(80, 0, 0, 0));
+            getChildren().add(quitBtn);
         });
     }
     
