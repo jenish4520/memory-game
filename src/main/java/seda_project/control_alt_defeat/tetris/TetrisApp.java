@@ -40,6 +40,8 @@ public class TetrisApp {
     public TetrisApp(Stage stage, GameHub hub) {
         this.stage = stage;
         this.hub = hub;
+        // Bug fix: ensure network is closed if the user closes the window
+        stage.addEventHandler(javafx.stage.WindowEvent.WINDOW_HIDING, e -> closeNetwork());
     }
 
     /** Closes any active network connections before navigating away. */
@@ -173,6 +175,7 @@ public class TetrisApp {
         Button startBtn = new Button("Start Hosting (Port 8080)");
         styleButton(startBtn);
         startBtn.setOnAction(e -> {
+            closeNetwork(); // Ensure old sessions are killed
             startBtn.setDisable(true);
             status.setText("Hosting on Port 8080... Waiting for Player 2.");
             
@@ -200,7 +203,6 @@ public class TetrisApp {
                     host.start(8080, p1Field.getText());
                     Platform.runLater(() -> {
                         boolean[] broadcastRunning = { true };
-                        // Panel reference needed by the disconnect lambda below
                         TetrisPanel[] panelRef = { null };
                         TetrisPanel panel = new TetrisPanel(logic, () -> {
                             broadcastRunning[0] = false;
@@ -211,7 +213,6 @@ public class TetrisApp {
                         panel.setLanHostMode();
                         panel.setupKeyEvents();
 
-                        // Disconnect handler can now show overlay on the live panel
                         host.onDisconnect = () -> Platform.runLater(() -> {
                             broadcastRunning[0] = false;
                             if (panelRef[0] != null) {
@@ -237,7 +238,11 @@ public class TetrisApp {
                         panel.start();
                     });
                 } catch (Exception ex) {
-                    Platform.runLater(() -> status.setText("Failed to host: " + ex.getMessage()));
+                    closeNetwork();
+                    Platform.runLater(() -> {
+                        status.setText("Failed to host: " + ex.getMessage());
+                        startBtn.setDisable(false);
+                    });
                 }
             }).start();
         });
