@@ -7,18 +7,18 @@ public class Board implements Serializable {
     public static final int WIDTH = 10;
     public static final int HEIGHT = 20;
     
-    // grid[y][x], stores color hex, null if empty
+    // the grid is y then x, null means a cell is empty
     public String[][] grid = new String[HEIGHT][WIDTH];
     
     public int linesClearedTotal = 0;
     public int level = 1;
     public int score = 0;
     
-    // For visual flashing
+    // used for the row clear effect
     public boolean[] flashedRows = new boolean[HEIGHT];
     public boolean needsFlash = false;
     
-    // Swap Power-up
+    // power-up state
     public boolean hasSwapPowerup = false;
     public int swapX = -1, swapY = -1;
     public boolean swapFlash = false;
@@ -85,7 +85,7 @@ public class Board implements Serializable {
         if (rows.length == 0) return;
         
         if (!isP2) {
-            // Normal: shift rows above down
+            // standard move: shift rows above down
             for (int r : rows) {
                 for (int y = r; y > 0; y--) {
                     System.arraycopy(grid[y-1], 0, grid[y], 0, WIDTH);
@@ -93,17 +93,12 @@ public class Board implements Serializable {
                 Arrays.fill(grid[0], null);
             }
         } else {
-            // P2: shift toward internal bottom (highest index).
-            // Visually, bottom is top.
-            // If row y is cleared, shift everything BELOW y UP.
-            // Rows are 0 to 19. cleared row is e.g. 15.
-            // Shift rows 16..19 to 15..18, and clear 19.
-            // But wait, if multiple rows are cleared, better to reconstruct.
+            // for P2 we shift the other way
             String[][] newGrid = new String[HEIGHT][WIDTH];
-            int writeY = 0; // write starting from 0
-            int rowIdx = 0; // check from 0
+            int writeY = 0; 
+            int rowIdx = 0; 
             
-            // Wait, for P2, "shift toward internal bottom".
+            // Reconstruct the grid for P2
             // Internal bottom is y=19.
             // If we clear, rows with y > cleared shift down (y--).
             // Let's iterate from 0 to 19, keep non-cleared rows.

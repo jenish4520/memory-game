@@ -30,32 +30,36 @@ public class CustomPieceDesigner {
         customPieces.clear();
         try {
             File f = new File("custom_pieces.txt");
-            if (!f.exists()) return;
+            if (!f.exists())
+                return;
             Scanner sc = new Scanner(f);
             while (sc.hasNextLine()) {
                 String line = sc.nextLine().trim();
-                if (line.isEmpty()) continue;
+                if (line.isEmpty())
+                    continue;
                 String[] parts = line.split(":");
                 String hex = parts[0];
                 String bits = parts[1];
                 int[][][] shapes = new int[4][5][5];
                 int idx = 0;
-                for (int r=0; r<5; r++) {
-                    for (int c=0; c<5; c++) {
+                for (int r = 0; r < 5; r++) {
+                    for (int c = 0; c < 5; c++) {
                         shapes[0][r][c] = bits.charAt(idx++) == '1' ? 1 : 0;
                     }
                 }
-                for (int i=1; i<4; i++) {
-                    for (int r=0; r<5; r++) {
-                        for (int c=0; c<5; c++) {
-                            shapes[i][c][4-r] = shapes[i-1][r][c];
+                for (int i = 1; i < 4; i++) {
+                    for (int r = 0; r < 5; r++) {
+                        for (int c = 0; c < 5; c++) {
+                            shapes[i][c][4 - r] = shapes[i - 1][r][c];
                         }
                     }
                 }
                 customPieces.add(new Tetromino(Tetromino.Type.CUSTOM, hex, shapes));
             }
             sc.close();
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void savePieces() {
@@ -64,52 +68,55 @@ public class CustomPieceDesigner {
             for (Tetromino t : customPieces) {
                 pw.print(t.colorHex + ":");
                 int[][] s = t.getShape();
-                for (int r=0; r<5; r++) {
-                    for (int c=0; c<5; c++) {
+                for (int r = 0; r < 5; r++) {
+                    for (int c = 0; c < 5; c++) {
                         pw.print(s[r][c]);
                     }
                 }
                 pw.println();
             }
             pw.close();
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void show(Stage stage, Runnable onBack) {
         loadPieces();
-        
+
         HBox mainLayout = new HBox(40);
         mainLayout.setAlignment(Pos.CENTER);
         mainLayout.setStyle("-fx-background-color: #0f0f1e;");
-        
+
         // Left side: list of pieces
         VBox leftBox = new VBox(10);
         leftBox.setAlignment(Pos.TOP_CENTER);
         leftBox.setPadding(new Insets(40));
-        
+
         Label listTitle = new Label("Saved Pieces");
         listTitle.setFont(Font.font("SansSerif", 24));
         listTitle.setTextFill(Color.WHITE);
         leftBox.getChildren().add(listTitle);
-        
+
         VBox piecesList = new VBox(5);
         Runnable refreshList = () -> {
             piecesList.getChildren().clear();
-            for (int i=0; i<customPieces.size(); i++) {
+            for (int i = 0; i < customPieces.size(); i++) {
                 Tetromino t = customPieces.get(i);
                 HBox row = new HBox(10);
                 row.setAlignment(Pos.CENTER);
-                
+
                 Canvas c = new Canvas(50, 50);
                 GraphicsContext gc = c.getGraphicsContext2D();
                 gc.setFill(Color.web(t.colorHex));
                 int[][] s = t.getShape();
-                for(int r=0; r<5; r++){
-                    for(int col=0; col<5; col++){
-                        if(s[r][col]==1) gc.fillRect(col*10, r*10, 10, 10);
+                for (int r = 0; r < 5; r++) {
+                    for (int col = 0; col < 5; col++) {
+                        if (s[r][col] == 1)
+                            gc.fillRect(col * 10, r * 10, 10, 10);
                     }
                 }
-                
+
                 Button delBtn = new Button("X");
                 delBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white;");
                 int finalI = i;
@@ -119,14 +126,14 @@ public class CustomPieceDesigner {
                     // trigger refresh
                     piecesList.getChildren().remove(row);
                 });
-                
+
                 row.getChildren().addAll(c, delBtn);
                 piecesList.getChildren().add(row);
             }
         };
         refreshList.run();
         leftBox.getChildren().add(piecesList);
-        
+
         // Right side: designer
         VBox root = new VBox(20);
         root.setAlignment(Pos.CENTER);
@@ -152,7 +159,8 @@ public class CustomPieceDesigner {
                 int finalC = c;
                 btn.setOnAction(e -> {
                     state[finalR][finalC] = !state[finalR][finalC];
-                    btn.setStyle(state[finalR][finalC] ? "-fx-background-color: #ffffff; -fx-border-color: #404040;" : "-fx-background-color: #202020; -fx-border-color: #404040;");
+                    btn.setStyle(state[finalR][finalC] ? "-fx-background-color: #ffffff; -fx-border-color: #404040;"
+                            : "-fx-background-color: #202020; -fx-border-color: #404040;");
                 });
                 buttons[r][c] = btn;
                 grid.add(btn, c, r);
@@ -170,31 +178,31 @@ public class CustomPieceDesigner {
                 return;
             }
             int[][][] shapes = new int[4][5][5];
-            for (int r=0; r<5; r++) {
-                for (int c=0; c<5; c++) {
+            for (int r = 0; r < 5; r++) {
+                for (int c = 0; c < 5; c++) {
                     shapes[0][r][c] = state[r][c] ? 1 : 0;
                 }
             }
             // generate rotations
-            for (int i=1; i<4; i++) {
-                for (int r=0; r<5; r++) {
-                    for (int c=0; c<5; c++) {
-                        shapes[i][c][4-r] = shapes[i-1][r][c];
+            for (int i = 1; i < 4; i++) {
+                for (int r = 0; r < 5; r++) {
+                    for (int c = 0; c < 5; c++) {
+                        shapes[i][c][4 - r] = shapes[i - 1][r][c];
                     }
                 }
             }
             // Add custom piece
-            String hex = String.format("#%06x", (int)(Math.random()*0xFFFFFF));
+            String hex = String.format("#%06x", (int) (Math.random() * 0xFFFFFF));
             Tetromino custom = new Tetromino(Tetromino.Type.CUSTOM, hex, shapes);
             customPieces.add(custom);
             savePieces();
             refreshList.run();
             msg.setText("Saved!");
             msg.setTextFill(Color.GREEN);
-            
+
             // clear grid
-            for (int r=0; r<5; r++) {
-                for (int c=0; c<5; c++) {
+            for (int r = 0; r < 5; r++) {
+                for (int c = 0; c < 5; c++) {
                     state[r][c] = false;
                     buttons[r][c].setStyle("-fx-background-color: #202020; -fx-border-color: #404040;");
                 }
@@ -207,26 +215,28 @@ public class CustomPieceDesigner {
 
         root.getChildren().addAll(title, grid, msg, saveBtn, cancelBtn);
         mainLayout.getChildren().addAll(leftBox, root);
-        
+
         stage.setScene(new Scene(mainLayout, 900, 650));
     }
 
     private static boolean validateConnected(boolean[][] state) {
         int count = 0;
         int startR = -1, startC = -1;
-        for (int r=0; r<5; r++) {
-            for (int c=0; c<5; c++) {
+        for (int r = 0; r < 5; r++) {
+            for (int c = 0; c < 5; c++) {
                 if (state[r][c]) {
                     count++;
-                    startR = r; startC = c;
+                    startR = r;
+                    startC = c;
                 }
             }
         }
-        if (count == 0) return false;
+        if (count == 0)
+            return false;
 
         boolean[][] visited = new boolean[5][5];
         Queue<int[]> q = new LinkedList<>();
-        q.add(new int[]{startR, startC});
+        q.add(new int[] { startR, startC });
         visited[startR][startC] = true;
 
         int connectedCount = 0;
@@ -235,13 +245,13 @@ public class CustomPieceDesigner {
             connectedCount++;
             int r = curr[0], c = curr[1];
 
-            int[][] dirs = {{-1,0},{1,0},{0,-1},{0,1}};
+            int[][] dirs = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
             for (int[] d : dirs) {
                 int nr = r + d[0];
                 int nc = c + d[1];
                 if (nr >= 0 && nr < 5 && nc >= 0 && nc < 5 && state[nr][nc] && !visited[nr][nc]) {
                     visited[nr][nc] = true;
-                    q.add(new int[]{nr, nc});
+                    q.add(new int[] { nr, nc });
                 }
             }
         }

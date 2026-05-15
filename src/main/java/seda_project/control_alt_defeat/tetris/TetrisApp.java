@@ -26,7 +26,7 @@ public class TetrisApp {
 
     private Stage stage;
     private GameHub hub;
-    // Held so we can close them when navigating away
+    // store these to shut down network on exit
     private TetrisHost activeHost;
     private TetrisClient activeClient;
 
@@ -40,7 +40,7 @@ public class TetrisApp {
     public TetrisApp(Stage stage, GameHub hub) {
         this.stage = stage;
         this.hub = hub;
-        // Bug fix: ensure network is closed if the user closes the window
+        // make sure the network shuts down if the window is closed
         stage.addEventHandler(javafx.stage.WindowEvent.WINDOW_HIDING, e -> closeNetwork());
     }
 
@@ -148,7 +148,7 @@ public class TetrisApp {
         GameLogic logic = new GameLogic("Player 1", "Player 2");
         TetrisPanel panel = new TetrisPanel(logic, this::show);
         
-        Scene scene = new Scene(panel, 1100, 750); // game board needs width
+        Scene scene = new Scene(panel, 1100, 750); // give the game some extra room
         stage.setScene(scene);
         stage.centerOnScreen();
         
@@ -175,7 +175,7 @@ public class TetrisApp {
         Button startBtn = new Button("Start Hosting (Port 28080)");
         styleButton(startBtn);
         startBtn.setOnAction(e -> {
-            closeNetwork(); // Ensure old sessions are killed
+            closeNetwork(); // kill any old sessions first
             startBtn.setDisable(true);
             status.setText("Hosting on Port 28080... Waiting for Player 2.");
             

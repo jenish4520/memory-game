@@ -27,7 +27,7 @@ public class TetrisPanel extends StackPane {
     private boolean isLanHost = false;
     private java.util.function.Consumer<TetrisMessage.Type> outMessage;
     
-    // Key states
+    // tracking which keys are down
     private Set<KeyCode> activeKeys = new HashSet<>();
     private long lastDAS_P1 = 0;
     private long lastDAS_P2 = 0;
@@ -35,6 +35,8 @@ public class TetrisPanel extends StackPane {
     private long lastRepeat_P2 = 0;
     private boolean initialDAS_P1 = false;
     private boolean initialDAS_P2 = false;
+    
+    private Button restartBtn;
     
     public TetrisPanel(GameLogic logic, Runnable onBack) {
         this.logic = logic;
@@ -51,8 +53,20 @@ public class TetrisPanel extends StackPane {
         });
         StackPane.setAlignment(backBtn, javafx.geometry.Pos.TOP_LEFT);
         StackPane.setMargin(backBtn, new javafx.geometry.Insets(10));
+
+        restartBtn = new Button("Play Again");
+        restartBtn.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-padding: 10 28;");
+        restartBtn.setVisible(false);
+        restartBtn.setOnAction(e -> {
+            // Simple reset: just wipe the state and start over
+            this.logic = new GameLogic(logic.p1.name, logic.p2.name);
+            restartBtn.setVisible(false);
+            requestFocus();
+        });
+        StackPane.setAlignment(restartBtn, javafx.geometry.Pos.CENTER);
+        StackPane.setMargin(restartBtn, new javafx.geometry.Insets(120, 0, 0, 0));
         
-        getChildren().addAll(canvas, backBtn);
+        getChildren().addAll(canvas, backBtn, restartBtn);
         
         setFocusTraversable(true);
         setOnMouseClicked(e -> requestFocus());
@@ -93,9 +107,8 @@ public class TetrisPanel extends StackPane {
                 long now = System.currentTimeMillis();
                 
                 handleInput(now);
-                // Bug fix #2: the client is a pure display – the host owns all
-                // game state. Running logic.update() here would corrupt scores
-                // and piece positions between network packets.
+                // Don't run logic on the client side, otherwise things get messy.
+                // The host should be the only one deciding where pieces are.
                 if (!isClient) {
                     logic.update(now);
                 }
@@ -119,8 +132,7 @@ public class TetrisPanel extends StackPane {
     
     private void handleInput(long now) {
         if (isClient) {
-            // P2 board is inverted — pieces rise upward visually.
-            // UP = accelerate upward (soft drop), LEFT/A = move left, RIGHT/D = move right.
+            // P2 side is upside down. UP is soft drop, LEFT/A and RIGHT/D move the piece.
             boolean goLeft  = activeKeys.contains(KeyCode.A)   || activeKeys.contains(KeyCode.LEFT);
             boolean goRight = activeKeys.contains(KeyCode.D)   || activeKeys.contains(KeyCode.RIGHT);
             boolean softDrp = activeKeys.contains(KeyCode.UP)  || activeKeys.contains(KeyCode.W);
@@ -146,7 +158,7 @@ public class TetrisPanel extends StackPane {
         }
 
         if (isLanHost) {
-            // P1 board — pieces fall downward. DOWN/S = soft drop, UP/W = rotate.
+            // Player 1 controls. DOWN is soft drop, UP is rotate.
             boolean goLeft  = activeKeys.contains(KeyCode.A)    || activeKeys.contains(KeyCode.LEFT);
             boolean goRight = activeKeys.contains(KeyCode.D)    || activeKeys.contains(KeyCode.RIGHT);
             boolean softDrp = activeKeys.contains(KeyCode.DOWN) || activeKeys.contains(KeyCode.S);
@@ -169,7 +181,7 @@ public class TetrisPanel extends StackPane {
             return;
         }
 
-        // Local game: P1 = arrow keys, P2 = WASD
+        // Controls for local play: Arrows for P1, WASD for P2.
         if (activeKeys.contains(KeyCode.LEFT)) {
             if (!initialDAS_P1) {
                 logic.moveLeft(logic.p1); initialDAS_P1 = true; lastDAS_P1 = now;
@@ -201,13 +213,12 @@ public class TetrisPanel extends StackPane {
         if (activeKeys.contains(KeyCode.W)) logic.softDrop(logic.p2);
     }
     
-    // We also need one-time presses for rotation and hard drop.
-    // They are better handled via key events so we don't drop inputs.
+    // Handle single presses like rotating or hard dropping.
     public void setupKeyEvents() {
         setOnKeyPressed(e -> {
             activeKeys.add(e.getCode());
             if (isClient) {
-                // P2 inverted board: DOWN=rotateCW (S in WASD), UP=softdrop (W), SPACE/SHIFT=hardDrop
+                // Upside down controls for P2
                 switch(e.getCode()) {
                     case DOWN: case S:      outMessage.accept(TetrisMessage.Type.INPUT_ROTATE_CW);  break;
                     case Z:    case Q:      outMessage.accept(TetrisMessage.Type.INPUT_ROTATE_CCW); break;
@@ -217,7 +228,7 @@ public class TetrisPanel extends StackPane {
                 return;
             }
             if (isLanHost) {
-                // P1 falling down: UP=rotateCW (W in WASD), Z/Q=rotateCCW, SPACE/SHIFT=hardDrop
+                // Normal gravity for P1
                 switch(e.getCode()) {
                     case UP:   case W:      logic.rotateCW(logic.p1);  break;
                     case Z:    case Q:      logic.rotateCCW(logic.p1); break;
@@ -226,7 +237,7 @@ public class TetrisPanel extends StackPane {
                 }
                 return;
             }
-            // Local game
+            // Standard local controls
             switch(e.getCode()) {
                 case UP:    logic.rotateCW(logic.p1);  break;
                 case Z:     logic.rotateCCW(logic.p1); break;
@@ -239,7 +250,7 @@ public class TetrisPanel extends StackPane {
         });
     }
 
-    /** Shows a full-screen "Connection Lost" overlay and stops the game loop. */
+    // Throw up an overlay if we lose the connection.
     public void showDisconnectOverlay(Runnable onQuit) {
         stop();
         Platform.runLater(() -> {
@@ -276,14 +287,14 @@ public class TetrisPanel extends StackPane {
         gc.setFill(Color.web("#0f0f1e"));
         gc.fillRect(0, 0, w, h);
         
-        double availableHeight = h - 20; // top/bottom padding
+        double availableHeight = h - 20; // some breathing room
         CELL = (int) (availableHeight / (Board.HEIGHT * 2.05));
         if (CELL < 10) CELL = 10;
         BOARD_W = Board.WIDTH * CELL;
         BOARD_H = Board.HEIGHT * CELL;
         
-        double offY2 = 10; // P2 (upwards) on top
-        double offY1 = offY2 + BOARD_H + 20; // P1 (downwards) below
+        double offY2 = 10; // P2 up top
+        double offY1 = offY2 + BOARD_H + 20; // P1 down below
         double offX = w / 2 - BOARD_W / 2;
         
         drawPlayerState(gc, logic.p2, offX, offY2);
@@ -292,6 +303,8 @@ public class TetrisPanel extends StackPane {
         if (logic.p1.isGameOver && logic.p2.isGameOver) {
             gc.setFill(Color.color(0, 0, 0, 0.8));
             gc.fillRect(0, 0, w, h);
+            
+            if (!restartBtn.isVisible()) restartBtn.setVisible(true);
 
             String msg = "DRAW!";
             Color c = Color.WHITE;
@@ -304,17 +317,17 @@ public class TetrisPanel extends StackPane {
             }
             
             gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 56));
-            // Shadow
+            // add a little shadow
             gc.setFill(Color.BLACK);
             gc.fillText(msg, w/2 - msg.length() * 15, h/2 - 20 + 4);
-            // Main Text
+            // draw the actual message
             gc.setFill(c);
             gc.fillText(msg, w/2 - msg.length() * 15 - 4, h/2 - 20);
         }
     }
     
     private void drawPlayerState(GraphicsContext gc, PlayerState p, double offX, double offY) {
-        // Draw HUD on Left
+        // Player stats on the left
         double textX = offX - 120;
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 20));
@@ -331,7 +344,7 @@ public class TetrisPanel extends StackPane {
         gc.setFill(Color.WHITE);
         gc.fillText(String.valueOf(p.linesCleared), textX, offY + 140);
         
-        // Draw Next Piece on Right
+        // Preview the next piece on the right
         double nextX = offX + BOARD_W + 30;
         gc.setFill(Color.web("#8c8caa"));
         gc.fillText("Next", nextX, offY + 30);
@@ -339,11 +352,11 @@ public class TetrisPanel extends StackPane {
             drawShape(gc, p.nextPiece.getShape(), nextX, offY + 50, p.nextPiece.colorHex, false, p.id == 2);
         }
         
-        // Draw Board Bg
+        // Background for the board
         gc.setFill(Color.web("#202020"));
         gc.fillRect(offX, offY, BOARD_W, BOARD_H);
         
-        // Grid lines
+        // Draw the grid
         gc.setStroke(Color.web("#303030"));
         gc.setLineWidth(1);
         for (int i = 0; i <= Board.WIDTH; i++) {
@@ -355,7 +368,7 @@ public class TetrisPanel extends StackPane {
         
         boolean inverted = (p.id == 2);
         
-        // Draw Locked Blocks
+        // Draw pieces that are already locked in
         for (int y = 0; y < Board.HEIGHT; y++) {
             for (int x = 0; x < Board.WIDTH; x++) {
                 if (p.board.grid[y][x] != null) {
@@ -364,13 +377,13 @@ public class TetrisPanel extends StackPane {
             }
         }
         
-        // Draw Ghost
+        // Ghost piece for easier aiming
         Tetromino ghost = logic.getGhost(p);
         if (ghost != null) {
             drawGhostShape(gc, ghost, offX, offY, inverted);
         }
         
-        // Draw Swap Powerup
+        // Powerups
         if (p.board.hasSwapPowerup) {
             double rx = offX + (inverted ? (Board.WIDTH - 1 - p.board.swapX) : p.board.swapX) * CELL;
             double ry = offY + (inverted ? (Board.HEIGHT - 1 - p.board.swapY) : p.board.swapY) * CELL;
@@ -389,7 +402,7 @@ public class TetrisPanel extends StackPane {
             p.board.swapFlash = false;
         }
         
-        // Draw Active Piece
+        // Currently falling piece
         if (!p.isGameOver) {
             if (p.activePiece != null) {
                 drawActiveShape(gc, p.activePiece, offX, offY, inverted);

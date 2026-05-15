@@ -58,7 +58,7 @@ public class GameLogic {
         
         if (p.activePiece == null) return;
         
-        // Gravity
+        // piece falls over time
         if (currentTime - p.lastFallTime > p.getFallDelay()) {
             Tetromino t = p.activePiece.copy();
             t.y++;
@@ -66,22 +66,22 @@ public class GameLogic {
                 p.activePiece = t;
                 p.lastFallTime = currentTime;
             } else {
-                // Grounded
+                // hit something
                 if (p.lockStartTime == 0) {
                     p.lockStartTime = currentTime;
                 }
             }
         }
         
-        // Lock delay 500ms
+        // wait a bit before locking the piece in
         if (p.lockStartTime > 0 && (currentTime - p.lockStartTime > 500 || p.lockResets >= 15)) {
-            // Recheck if still grounded
+            // check if it's still stuck
             Tetromino t = p.activePiece.copy();
             t.y++;
             if (!p.board.isValid(t)) {
                 lockPiece(p);
             } else {
-                p.lockStartTime = 0; // No longer grounded
+                p.lockStartTime = 0; // it's free again
             }
         }
     }
@@ -89,7 +89,7 @@ public class GameLogic {
     public void lockPiece(PlayerState p) {
         p.board.lock(p.activePiece);
         
-        // Check swap trigger
+        // did they hit the swap power-up?
         if (p.board.hasSwapPowerup) {
             int[][] shape = p.activePiece.getShape();
             boolean triggered = false;
@@ -108,7 +108,7 @@ public class GameLogic {
                 p.board.hasSwapPowerup = false;
                 p1.board.swapFlash = true;
                 p2.board.swapFlash = true;
-                // Swap boards completely
+                // trade boards
                 String[][] tempGrid = p1.board.grid;
                 p1.board.grid = p2.board.grid;
                 p2.board.grid = tempGrid;
@@ -151,9 +151,7 @@ public class GameLogic {
         if (p.isGameOver || p.activePiece == null) return;
         Tetromino t = p.activePiece.copy();
         
-        // P2 is visually mirrored horizontally? 
-        // If P2 visually mirrored, "A" means visually left. Visually left is +x.
-        // If P1, "Left" is -x.
+        // handling horizontal flip for P2
         t.x += (p.id == 1) ? -1 : 1; 
         
         if (p.board.isValid(t)) {
@@ -179,7 +177,7 @@ public class GameLogic {
         if (p.board.isValid(t)) {
             p.activePiece = t;
             p.score += 1;
-            p.lastFallTime = System.currentTimeMillis(); // reset gravity
+            p.lastFallTime = System.currentTimeMillis(); // reset the drop timer
         }
     }
     
@@ -232,11 +230,7 @@ public class GameLogic {
         for (int[] kick : kicks) {
             Tetromino test = t.copy();
             test.x += (p.id == 1) ? kick[0] : -kick[0]; 
-            // P2 X is inverted, Y is inverted logically?
-            // "internally mirrored, displayed flipped vertically"
-            // Let's invert kick X for P2. Kick Y also inverted?
-            // Let's invert kick Y for P2 as well, since logical Y goes down, visual goes up.
-            test.y += (p.id == 1) ? -kick[1] : kick[1]; // kick[1] is + for UP. Logically UP is -y.
+            test.y += (p.id == 1) ? -kick[1] : kick[1]; // kick[1] is UP (+), so logically subtract for P1
             
             if (p.board.isValid(test)) {
                 p.activePiece = test;

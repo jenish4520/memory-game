@@ -27,7 +27,7 @@ public class GameHub {
 
     public GameHub(Stage stage) {
         this.stage = stage;
-        stage.setTitle("Arcade Hub");
+        stage.setTitle("Retro Games");
         stage.setWidth(900);
         stage.setHeight(650);
         stage.setMinWidth(900);
@@ -39,7 +39,7 @@ public class GameHub {
         root.setAlignment(Pos.CENTER);
         root.setStyle("-fx-background-color: #0f0f1e;");
 
-        Label title = new Label("ARCADE HUB");
+        Label title = new Label("Retro Games");
         title.setFont(Font.font("SansSerif", FontWeight.BOLD, 48));
         title.setTextFill(Color.web("#f0f0fa"));
         

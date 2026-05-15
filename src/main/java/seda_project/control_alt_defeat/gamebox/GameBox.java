@@ -9,7 +9,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-// Manages UI and game lifecycle.
+// this class handles the main game flow
 
 public class GameBox {
 
@@ -19,11 +19,11 @@ public class GameBox {
     private MenuPanel menuPanel;
     private GamePanel gamePanel;
 
-    // Game state.
+    // keep track of the game's current state
     private GameLogic gameLogic;
     private GameConfig currentConfig;
 
-    // Network vars.
+    // networking related variables
     private GameHost gameHost;
     private GameClient gameClient;
     private boolean isHost;
@@ -145,7 +145,7 @@ public class GameBox {
         }, "host-setup").start();
     }
 
-    // Handle host message.
+    // process messages coming from the host
     private void onHostReceivedMessage(GameMessage msg) {
         switch (msg.getType()) {
             case CARD_CLICK -> handleRemoteCardClick(msg.getCardIndex());
@@ -155,7 +155,7 @@ public class GameBox {
         }
     }
 
-    // Handle remote click.
+    // when a remote player clicks a card
     private void handleRemoteCardClick(int cardIndex) {
         if (!isHost)
             return;
@@ -303,7 +303,7 @@ public class GameBox {
         }
     }
 
-    // Broadcast state.
+    // sync the state with other players
     private void broadcastState(GameState state) {
         Platform.runLater(() -> {
             if (gamePanel != null) {
